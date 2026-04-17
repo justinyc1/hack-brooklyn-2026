@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
+import { BrowserScrollReveal } from '../components/BrowserScrollReveal'
 
 const stagger = {
   hidden: {},
@@ -151,6 +152,9 @@ export function Home() {
           </motion.div>
         </motion.div>
       </section>
+
+      {/* Browser scroll reveal */}
+      <BrowserScrollReveal />
 
       {/* Feature strip */}
       <section className="relative border-t border-ink-700/40 bg-ink-900/40 py-20">
