@@ -1,0 +1,50 @@
+# --- Environment / secrets ---
+.env
+.env.*
+!.env.example
+
+# --- Dependencies ---
+**/node_modules/
+venv/
+.venv/
+
+# --- Build outputs ---
+**/dist/
+**/build/
+**/.next/
+**/.nuxt/
+**/.output/
+**/.svelte-kit/
+**/.astro/
+**/out/
+
+# --- Tooling caches ---
+**/.cache/
+**/.parcel-cache/
+**/.turbo/
+**/.vite/
+**/.eslintcache
+**/.stylelintcache
+**/coverage/
+**/.nyc_output/
+
+# --- Logs ---
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# --- OS / editor junk ---
+.DS_Store
+Thumbs.db
+*.swp
+
+.vscode/
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/launch.json
+!.vscode/tasks.json
+
+.idea/
+*.iml
