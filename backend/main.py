@@ -1,12 +1,14 @@
 from fastapi import FastAPI
-from app.routes.health import router as health_router
-from app.config import settings
-from app.db import db
+from routes.health import router as health_router
+from routes.interviews import router as interviews_router
+from config import settings
+from db import db
 import httpx
 
 app = FastAPI(title="Hack Brooklyn 2026 Backend")
 
 app.include_router(health_router)
+app.include_router(interviews_router)
 
 @app.get("/")
 def root():

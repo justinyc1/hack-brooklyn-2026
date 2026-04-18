@@ -4,3 +4,4 @@ python-dotenv
 pymongo
 httpx
 pydantic-settings
+PyJWT[crypto]

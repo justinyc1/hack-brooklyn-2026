@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 from pydantic import Field
-from app.models.base import MongoBase
+from models.base import MongoBase
 
 
 class EvidenceSpan(MongoBase):
