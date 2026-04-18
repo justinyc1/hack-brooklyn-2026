@@ -3,6 +3,7 @@ from routes.health import router as health_router
 from routes.interviews import router as interviews_router
 from routes.transcript import router as transcript_router
 from routes.ws import router as ws_router
+from routes.code import router as code_router
 from config import settings
 from db import db
 import httpx
@@ -13,6 +14,7 @@ app.include_router(health_router)
 app.include_router(interviews_router)
 app.include_router(transcript_router)
 app.include_router(ws_router)
+app.include_router(code_router)
 
 @app.get("/")
 def root():

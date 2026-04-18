@@ -14,10 +14,10 @@ BEHAVIORAL_PROMPTS = [
     "Tell me about a time you received critical feedback and how you responded.",
 ]
 
-TECHNICAL_PROMPTS = [
-    "Given an array of integers, find the two numbers that sum to a target value.",
-    "Implement a function to detect a cycle in a linked list.",
-    "Design a data structure that supports insert, delete, and getRandom in O(1).",
+TECHNICAL_QUESTIONS = [
+    {"prompt": "Given an array of integers, find the indices of the two numbers that sum to a target value.", "problem_id": "two-sum"},
+    {"prompt": "Given a string of brackets, determine if the input string is valid (brackets close in correct order).", "problem_id": "valid-parentheses"},
+    {"prompt": "Given an integer array, find the contiguous subarray which has the largest sum and return its sum.", "problem_id": "maximum-subarray"},
 ]
 
 
@@ -36,13 +36,14 @@ def plan_questions(session_id: str, mode: InterviewMode, role: str) -> list[Ques
 
     if mode in (InterviewMode.technical, InterviewMode.mixed):
         offset = len(questions)
-        for i, prompt in enumerate(TECHNICAL_PROMPTS[:2]):
+        for i, q in enumerate(TECHNICAL_QUESTIONS[:2]):
             questions.append(Question(
                 session_id=session_id,
                 order=offset + i,
                 type=QuestionType.technical,
-                prompt=prompt,
+                prompt=q["prompt"],
                 follow_up_tree=[],
+                coding_problem_id=q["problem_id"],
             ))
 
     return questions

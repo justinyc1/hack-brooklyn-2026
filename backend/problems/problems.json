@@ -1,0 +1,62 @@
+[
+  {
+    "id": "two-sum",
+    "title": "Two Sum",
+    "difficulty": "easy",
+    "prompt": "Given an array of integers, find the indices of the two numbers that sum to a target value. You may assume each input has exactly one solution, and you may not use the same element twice. Return the indices in sorted order.",
+    "languages": ["python", "javascript", "java", "cpp", "go"],
+    "starter_code": {
+      "python": "import json, sys\n\ndef twoSum(nums, target):\n    # Write your solution here\n    pass\n\nif __name__ == \"__main__\":\n    lines = sys.stdin.read().strip().split('\\n')\n    nums = json.loads(lines[0])\n    target = int(lines[1])\n    print(json.dumps(twoSum(nums, target)))\n",
+      "javascript": "const lines = require('fs').readFileSync('/dev/stdin','utf8').trim().split('\\n');\nconst nums = JSON.parse(lines[0]);\nconst target = parseInt(lines[1]);\n\nfunction twoSum(nums, target) {\n    // Write your solution here\n}\n\nconsole.log(JSON.stringify(twoSum(nums, target)));\n",
+      "java": "import java.util.*;\nimport java.io.*;\n\npublic class Main {\n    public static int[] twoSum(int[] nums, int target) {\n        // Write your solution here\n        return new int[]{};\n    }\n\n    public static void main(String[] args) throws Exception {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        String[] parts = br.readLine().replaceAll(\"[\\\\[\\\\]]\", \"\").split(\",\");\n        int target = Integer.parseInt(br.readLine().trim());\n        int[] nums = Arrays.stream(parts).mapToInt(s -> Integer.parseInt(s.trim())).toArray();\n        int[] res = twoSum(nums, target);\n        System.out.println(\"[\" + res[0] + \",\" + res[1] + \"]\");\n    }\n}\n",
+      "cpp": "#include <bits/stdc++.h>\nusing namespace std;\n\nvector<int> twoSum(vector<int>& nums, int target) {\n    // Write your solution here\n    return {};\n}\n\nint main() {\n    string line; getline(cin, line);\n    line.erase(remove(line.begin(), line.end(), '['), line.end());\n    line.erase(remove(line.begin(), line.end(), ']'), line.end());\n    stringstream ss(line); string tok;\n    vector<int> nums;\n    while (getline(ss, tok, ',')) nums.push_back(stoi(tok));\n    int target; cin >> target;\n    auto res = twoSum(nums, target);\n    cout << \"[\" << res[0] << \",\" << res[1] << \"]\" << endl;\n    return 0;\n}\n",
+      "go": "package main\n\nimport (\n    \"encoding/json\"\n    \"fmt\"\n    \"os\"\n    \"bufio\"\n)\n\nfunc twoSum(nums []int, target int) []int {\n    // Write your solution here\n    return nil\n}\n\nfunc main() {\n    scanner := bufio.NewScanner(os.Stdin)\n    scanner.Scan()\n    var nums []int\n    json.Unmarshal([]byte(scanner.Text()), &nums)\n    scanner.Scan()\n    var target int\n    fmt.Sscan(scanner.Text(), &target)\n    result := twoSum(nums, target)\n    out, _ := json.Marshal(result)\n    fmt.Println(string(out))\n}\n"
+    },
+    "test_cases": [
+      { "id": "tc1", "stdin": "[2,7,11,15]\n9", "expected_stdout": "[0,1]", "is_hidden": false },
+      { "id": "tc2", "stdin": "[3,2,4]\n6", "expected_stdout": "[1,2]", "is_hidden": false },
+      { "id": "tc3", "stdin": "[3,3]\n6", "expected_stdout": "[0,1]", "is_hidden": true },
+      { "id": "tc4", "stdin": "[1,5,3,7]\n8", "expected_stdout": "[1,2]", "is_hidden": true }
+    ]
+  },
+  {
+    "id": "valid-parentheses",
+    "title": "Valid Parentheses",
+    "difficulty": "easy",
+    "prompt": "Given a string containing just the characters '(', ')', '{', '}', '[' and ']', determine if the input string is valid. An input string is valid if open brackets are closed by the same type of brackets, and open brackets are closed in the correct order.",
+    "languages": ["python", "javascript", "java", "cpp", "go"],
+    "starter_code": {
+      "python": "import sys\n\ndef isValid(s):\n    # Write your solution here\n    pass\n\nif __name__ == \"__main__\":\n    s = sys.stdin.read().strip()\n    print(str(isValid(s)).lower())\n",
+      "javascript": "const s = require('fs').readFileSync('/dev/stdin','utf8').trim();\n\nfunction isValid(s) {\n    // Write your solution here\n}\n\nconsole.log(isValid(s).toString().toLowerCase());\n",
+      "java": "import java.util.*;\n\npublic class Main {\n    public static boolean isValid(String s) {\n        // Write your solution here\n        return false;\n    }\n\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        System.out.println(isValid(sc.nextLine().trim()));\n    }\n}\n",
+      "cpp": "#include <bits/stdc++.h>\nusing namespace std;\n\nbool isValid(string s) {\n    // Write your solution here\n    return false;\n}\n\nint main() {\n    string s; getline(cin, s);\n    cout << (isValid(s) ? \"true\" : \"false\") << endl;\n    return 0;\n}\n",
+      "go": "package main\n\nimport (\n    \"bufio\"\n    \"fmt\"\n    \"os\"\n    \"strings\"\n)\n\nfunc isValid(s string) bool {\n    // Write your solution here\n    return false\n}\n\nfunc main() {\n    reader := bufio.NewReader(os.Stdin)\n    s, _ := reader.ReadString('\\n')\n    s = strings.TrimSpace(s)\n    if isValid(s) {\n        fmt.Println(\"true\")\n    } else {\n        fmt.Println(\"false\")\n    }\n}\n"
+    },
+    "test_cases": [
+      { "id": "tc1", "stdin": "()", "expected_stdout": "true", "is_hidden": false },
+      { "id": "tc2", "stdin": "()[]{}", "expected_stdout": "true", "is_hidden": false },
+      { "id": "tc3", "stdin": "(]", "expected_stdout": "false", "is_hidden": true },
+      { "id": "tc4", "stdin": "([)]", "expected_stdout": "false", "is_hidden": true }
+    ]
+  },
+  {
+    "id": "maximum-subarray",
+    "title": "Maximum Subarray",
+    "difficulty": "medium",
+    "prompt": "Given an integer array nums, find the contiguous subarray (containing at least one number) which has the largest sum and return its sum.",
+    "languages": ["python", "javascript", "java", "cpp", "go"],
+    "starter_code": {
+      "python": "import json, sys\n\ndef maxSubArray(nums):\n    # Write your solution here\n    pass\n\nif __name__ == \"__main__\":\n    nums = json.loads(sys.stdin.read().strip())\n    print(maxSubArray(nums))\n",
+      "javascript": "const nums = JSON.parse(require('fs').readFileSync('/dev/stdin','utf8').trim());\n\nfunction maxSubArray(nums) {\n    // Write your solution here\n}\n\nconsole.log(maxSubArray(nums));\n",
+      "java": "import java.util.*;\nimport java.io.*;\n\npublic class Main {\n    public static int maxSubArray(int[] nums) {\n        // Write your solution here\n        return 0;\n    }\n\n    public static void main(String[] args) throws Exception {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        String[] parts = br.readLine().replaceAll(\"[\\\\[\\\\]]\", \"\").split(\",\");\n        int[] nums = Arrays.stream(parts).mapToInt(s -> Integer.parseInt(s.trim())).toArray();\n        System.out.println(maxSubArray(nums));\n    }\n}\n",
+      "cpp": "#include <bits/stdc++.h>\nusing namespace std;\n\nint maxSubArray(vector<int>& nums) {\n    // Write your solution here\n    return 0;\n}\n\nint main() {\n    string line; getline(cin, line);\n    line.erase(remove(line.begin(), line.end(), '['), line.end());\n    line.erase(remove(line.begin(), line.end(), ']'), line.end());\n    stringstream ss(line); string tok;\n    vector<int> nums;\n    while (getline(ss, tok, ',')) nums.push_back(stoi(tok));\n    cout << maxSubArray(nums) << endl;\n    return 0;\n}\n",
+      "go": "package main\n\nimport (\n    \"encoding/json\"\n    \"fmt\"\n    \"os\"\n)\n\nfunc maxSubArray(nums []int) int {\n    // Write your solution here\n    return 0\n}\n\nfunc main() {\n    var nums []int\n    input, _ := os.ReadFile(\"/dev/stdin\")\n    json.Unmarshal(input, &nums)\n    fmt.Println(maxSubArray(nums))\n}\n"
+    },
+    "test_cases": [
+      { "id": "tc1", "stdin": "[-2,1,-3,4,-1,2,1,-5,4]", "expected_stdout": "6", "is_hidden": false },
+      { "id": "tc2", "stdin": "[1]", "expected_stdout": "1", "is_hidden": false },
+      { "id": "tc3", "stdin": "[5,4,-1,7,8]", "expected_stdout": "23", "is_hidden": true },
+      { "id": "tc4", "stdin": "[-1,-2,-3]", "expected_stdout": "-1", "is_hidden": true }
+    ]
+  }
+]
