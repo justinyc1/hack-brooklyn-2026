@@ -216,7 +216,7 @@ export function Home() {
           className="mx-auto max-w-2xl px-6 text-center"
         >
           <h2 className="mb-4 font-sans text-4xl font-extrabold text-paper md:text-5xl">
-            Ready to feel what a real interview feels like?
+            Ready to run a mock interview?
           </h2>
           <p className="mb-8 text-paper-dim">Set up your session in 60 seconds. No account required.</p>
           <button
