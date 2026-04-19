@@ -15,7 +15,7 @@ app = FastAPI(title="Hack Brooklyn 2026 Backend")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:3000", "https://intervue.org"],
+    allow_origins=["http://localhost:5173", "http://localhost:3000", "https://intervue.org", "https://www.intervue.org"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
