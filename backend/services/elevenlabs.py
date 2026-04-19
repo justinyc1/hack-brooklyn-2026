@@ -80,7 +80,7 @@ async def create_interview_agent(session, questions: list) -> str:
             "agent": {
                 "prompt": {
                     "prompt": _build_system_prompt(session, questions),
-                    "llm": "claude-sonnet-4-5",
+                    "llm": "gemini-2.0-flash-001",
                     "temperature": 0.6,
                 },
                 "first_message": first_message,
@@ -106,7 +106,8 @@ async def create_interview_agent(session, questions: list) -> str:
             headers={"xi-api-key": settings.elevenlabs_api_key},
             json=payload,
         )
-        resp.raise_for_status()
+        if not resp.is_success:
+            raise RuntimeError(f"ElevenLabs agent creation failed {resp.status_code}: {resp.text}")
         return resp.json()["agent_id"]
 
 

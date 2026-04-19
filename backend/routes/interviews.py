@@ -12,10 +12,14 @@ from schemas.interviews import (
     AgentUrlResponse,
     CreateSessionRequest,
     PatchSessionRequest,
+    ProblemResponse,
+    QuestionResponse,
     SessionListResponse,
     SessionResponse,
 )
+from services.code_runner import load_problem
 from services.elevenlabs import create_interview_agent, get_signed_url, sync_transcript
+from services.feedback import generate_feedback
 from services.question_planner import plan_questions
 
 logger = logging.getLogger(__name__)
@@ -87,8 +91,8 @@ async def create_session(
     agent_id: str | None = None
     try:
         agent_id = await create_interview_agent(session, questions)
-    except Exception:
-        logger.exception("ElevenLabs agent creation failed for session %s", session_id)
+    except Exception as exc:
+        logger.error("ElevenLabs agent creation failed for session %s: %s", session_id, exc)
 
     db.sessions.update_one(
         {"_id": ObjectId(session_id)},
@@ -113,6 +117,49 @@ def get_session(
 ):
     doc = _get_owned_session(session_id, clerk_user_id)
     return _session_to_response(doc)
+
+
+@router.get("/{session_id}/questions", response_model=list[QuestionResponse])
+def get_session_questions(
+    session_id: str,
+    clerk_user_id: str = Depends(require_auth),
+):
+    doc = _get_owned_session(session_id, clerk_user_id)
+    question_ids = doc.get("question_ids", [])
+    valid_oids = []
+    for qid in question_ids:
+        try:
+            valid_oids.append(ObjectId(qid))
+        except Exception:
+            pass
+    questions = list(db.questions.find({"_id": {"$in": valid_oids}}))
+    questions.sort(key=lambda q: q.get("order", 0))
+
+    result = []
+    for q in questions:
+        problem = None
+        coding_problem_id = q.get("coding_problem_id")
+        if coding_problem_id:
+            raw = load_problem(coding_problem_id)
+            if raw:
+                problem = {
+                    "id": raw["id"],
+                    "title": raw["title"],
+                    "difficulty": raw["difficulty"],
+                    "description": raw["description"],
+                    "examples": raw.get("examples", []),
+                    "constraints": raw.get("constraints", []),
+                    "starter_code": raw.get("starter_code", {}),
+                }
+        result.append(QuestionResponse(
+            id=str(q["_id"]),
+            type=q.get("type", "behavioral"),
+            prompt=q.get("prompt", ""),
+            order=q.get("order", 0),
+            coding_problem_id=coding_problem_id,
+            problem=problem,
+        ))
+    return result
 
 
 @router.get("/{session_id}/agent-url", response_model=AgentUrlResponse)
@@ -141,6 +188,7 @@ async def patch_session(
     clerk_user_id: str = Depends(require_auth),
 ):
     doc = _get_owned_session(session_id, clerk_user_id)
+    pre_update_status = doc.get("status")
 
     updates: dict = {}
 
@@ -165,14 +213,23 @@ async def patch_session(
 
     doc = db.sessions.find_one({"_id": ObjectId(session_id)})
 
-    # When a session completes, sync the ElevenLabs transcript in the background
+    _terminal = (SessionStatus.completed.value, SessionStatus.abandoned.value)
+    session_completed = (
+        body.status in (SessionStatus.completed, SessionStatus.abandoned)
+        and pre_update_status not in _terminal
+    )
+
+    # Sync ElevenLabs transcript when session ends (only if conversation was linked)
     conversation_id = doc.get("elevenlabs_conversation_id")
-    session_completed = body.status in (SessionStatus.completed, SessionStatus.abandoned)
     if session_completed and conversation_id:
         started_at = doc.get("started_at")
         background_tasks.add_task(
             _sync_transcript_background, session_id, conversation_id, started_at
         )
+
+    # Generate feedback whenever a session ends (with or without ElevenLabs)
+    if session_completed:
+        background_tasks.add_task(generate_feedback, session_id)
 
     return _session_to_response(doc)
 

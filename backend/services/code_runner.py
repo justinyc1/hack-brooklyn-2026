@@ -10,7 +10,7 @@ _problems_cache: dict[str, dict] | None = None
 def _load_all_problems() -> dict[str, dict]:
     global _problems_cache
     if _problems_cache is None:
-        with open(_PROBLEMS_PATH) as f:
+        with open(_PROBLEMS_PATH, encoding="utf-8") as f:
             problems_list = json.load(f)
         _problems_cache = {p["id"]: p for p in problems_list}
     return _problems_cache

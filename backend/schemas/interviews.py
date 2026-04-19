@@ -45,3 +45,22 @@ class SessionListResponse(BaseModel):
 class AgentUrlResponse(BaseModel):
     agent_id: str
     signed_url: str
+
+
+class ProblemResponse(BaseModel):
+    id: str
+    title: str
+    difficulty: str
+    description: str
+    examples: list[dict] = Field(default_factory=list)
+    constraints: list[str] = Field(default_factory=list)
+    starter_code: dict[str, str] = Field(default_factory=dict)
+
+
+class QuestionResponse(BaseModel):
+    id: str
+    type: str
+    prompt: str
+    order: int
+    coding_problem_id: str | None = None
+    problem: ProblemResponse | None = None

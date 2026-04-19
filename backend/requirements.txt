@@ -8,3 +8,4 @@ PyJWT[crypto]
 pytest
 pytest-asyncio
 pytest-mock
+openai>=1.0.0

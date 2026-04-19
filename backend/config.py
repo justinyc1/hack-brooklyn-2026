@@ -9,6 +9,8 @@ class Settings(BaseSettings):
     clerk_secret_key: str
     judge0_api_key: str = ""
     judge0_api_url: str = "https://judge0-ce.p.rapidapi.com"
+    featherless_api_key: str = ""
+    groq_api_key: str = ""
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

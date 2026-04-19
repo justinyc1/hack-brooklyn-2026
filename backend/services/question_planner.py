@@ -25,7 +25,7 @@ def plan_questions(session_id: str, mode: InterviewMode, role: str) -> list[Ques
     questions: list[Question] = []
 
     if mode in (InterviewMode.behavioral, InterviewMode.mixed):
-        for i, prompt in enumerate(BEHAVIORAL_PROMPTS[:3]):
+        for i, prompt in enumerate(BEHAVIORAL_PROMPTS[:1]):
             questions.append(Question(
                 session_id=session_id,
                 order=i,
@@ -36,7 +36,7 @@ def plan_questions(session_id: str, mode: InterviewMode, role: str) -> list[Ques
 
     if mode in (InterviewMode.technical, InterviewMode.mixed):
         offset = len(questions)
-        for i, q in enumerate(TECHNICAL_QUESTIONS[:2]):
+        for i, q in enumerate(TECHNICAL_QUESTIONS[:1]):
             questions.append(Question(
                 session_id=session_id,
                 order=offset + i,
