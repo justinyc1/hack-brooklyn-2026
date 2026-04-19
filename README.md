@@ -91,3 +91,5 @@ Most interview prep tools are static: you read a question on a screen and type a
 
 ### System Architecture:
 ![System Architecture](./frontend/public/system_architecture.jpg)
+
+[View Detailed Architecture Walkthrough](./ARCHITECTURE.md)
