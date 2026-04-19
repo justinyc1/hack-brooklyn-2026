@@ -6,7 +6,7 @@ export function Footer() {
       <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-6 px-6 md:flex-row">
         <div className="flex items-center gap-2">
           <span className="font-mono text-xs text-ember">◆</span>
-          <span className="font-display text-lg font-semibold text-paper">Intervue</span>
+          <span className="font-sans text-lg font-semibold text-paper">Intervue</span>
           <span className="font-mono text-xs text-paper-faint ml-3">v0.1.0</span>
         </div>
 
@@ -26,7 +26,7 @@ export function Footer() {
         </div>
 
         <p className="font-mono text-xs text-paper-faint">
-          Hack Brooklyn 2026
+          
         </p>
       </div>
     </footer>

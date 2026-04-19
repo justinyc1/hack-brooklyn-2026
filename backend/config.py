@@ -5,6 +5,12 @@ class Settings(BaseSettings):
     tavily_api_key: str
     mongodb_uri: str
     database_name: str = "mock_interview_app"
+    clerk_publishable_key: str
+    clerk_secret_key: str
+    judge0_api_key: str = ""
+    judge0_api_url: str = "https://judge0-ce.p.rapidapi.com"
+    featherless_api_key: str = ""
+    groq_api_key: str = ""
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

@@ -1,14 +1,11 @@
-# --- Environment / secrets ---
 .env
 .env.*
 !.env.example
 
-# --- Dependencies ---
 **/node_modules/
 venv/
 .venv/
 
-# --- Build outputs ---
 **/dist/
 **/build/
 **/.next/
@@ -18,7 +15,6 @@ venv/
 **/.astro/
 **/out/
 
-# --- Tooling caches ---
 **/.cache/
 **/.parcel-cache/
 **/.turbo/
@@ -28,14 +24,12 @@ venv/
 **/coverage/
 **/.nyc_output/
 
-# --- Logs ---
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
-# --- OS / editor junk ---
 .DS_Store
 Thumbs.db
 *.swp
@@ -48,3 +42,8 @@ Thumbs.db
 
 .idea/
 *.iml
+
+**/__pycache__/
+*.pyc
+*.pyo
+

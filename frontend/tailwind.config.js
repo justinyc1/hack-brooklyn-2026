@@ -5,29 +5,29 @@ export default {
     extend: {
       colors: {
         ink: {
-          950: '#0C0A09',
-          900: '#15120F',
-          800: '#1C1917',
-          700: '#2A2522',
-          600: '#3D3835',
+          950: '#1A1A1C',
+          900: '#1E1E20',
+          800: '#252528',
+          700: '#2E2E32',
+          600: '#3F3F46',
         },
         paper: {
-          DEFAULT: '#FAF7F2',
-          dim: '#A8A29E',
-          faint: '#5C5753',
+          DEFAULT: '#E4E4E7',
+          dim: '#71717A',
+          faint: '#3F3F46',
         },
         ember: {
-          DEFAULT: '#FF6B35',
-          soft: '#FF8A5C',
-          muted: 'rgba(255,107,53,0.12)',
+          DEFAULT: '#4ADE80',
+          soft: '#86EFAC',
+          muted: 'rgba(74,222,128,0.1)',
         },
         moss: {
-          DEFAULT: '#7E9E5C',
-          muted: 'rgba(126,158,92,0.12)',
+          DEFAULT: '#4ADE80',
+          muted: 'rgba(74,222,128,0.1)',
         },
         crimson: {
-          DEFAULT: '#B23A3A',
-          muted: 'rgba(178,58,58,0.12)',
+          DEFAULT: '#F87171',
+          muted: 'rgba(248,113,113,0.12)',
         },
       },
       fontFamily: {
@@ -36,11 +36,11 @@ export default {
         mono: ['"JetBrains Mono"', 'monospace'],
       },
       boxShadow: {
-        card: '0 1px 0 rgba(250,247,242,0.04), 0 20px 48px -24px rgba(0,0,0,0.9), inset 0 0 0 1px rgba(250,247,242,0.06)',
-        'card-hover': '0 1px 0 rgba(250,247,242,0.06), 0 32px 64px -24px rgba(0,0,0,0.95), inset 0 0 0 1px rgba(255,107,53,0.2)',
-        ember: '0 0 32px -4px rgba(255,107,53,0.4)',
-        'ember-sm': '0 0 12px -2px rgba(255,107,53,0.25)',
-        subtle: 'inset 0 0 0 1px rgba(250,247,242,0.06)',
+        card: '0 1px 0 rgba(255,255,255,0.03), 0 4px 16px -4px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.05)',
+        'card-hover': '0 1px 0 rgba(255,255,255,0.05), 0 8px 24px -8px rgba(0,0,0,0.6), inset 0 0 0 1px rgba(74,222,128,0.15)',
+        ember: '0 0 32px -4px rgba(74,222,128,0.35)',
+        'ember-sm': '0 0 12px -2px rgba(74,222,128,0.2)',
+        subtle: 'inset 0 0 0 1px rgba(255,255,255,0.05)',
       },
       keyframes: {
         'pulse-ember': {

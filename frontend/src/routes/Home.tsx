@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
+import { BrowserScrollReveal } from '../components/BrowserScrollReveal'
 
 const stagger = {
   hidden: {},
@@ -45,8 +46,7 @@ export function Home() {
     <div className="relative overflow-hidden">
       {/* Atmospheric background */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -right-40 h-[600px] w-[600px] rounded-full bg-ember/5 blur-[120px]" />
-        <div className="absolute top-1/2 -left-60 h-[400px] w-[400px] rounded-full bg-ember/3 blur-[100px]" />
+        <div className="absolute -top-40 -right-40 h-[600px] w-[600px] rounded-full bg-ember/4 blur-[140px]" />
       </div>
 
       {/* Hero */}
@@ -60,18 +60,17 @@ export function Home() {
           {/* Left: text */}
           <div className="flex flex-col justify-center">
             <motion.p variants={fadeUp} className="mb-6 font-mono text-xs uppercase tracking-widest text-paper-faint">
-              <span className="text-ember">▶</span> mock.interview --mode=technical
+              <span className="text-ember">▶</span> session.active
             </motion.p>
 
             <motion.h1
               variants={fadeUp}
-              className="font-display text-[clamp(3.5rem,8vw,6.5rem)] font-semibold leading-[0.92] tracking-tight text-paper"
+              className="font-sans text-[clamp(2.8rem,6vw,5rem)] font-extrabold leading-[0.96] tracking-tight text-paper"
             >
-              Speak the<br />
-              interview<br />
-              before it{' '}
-              <span className="text-ember italic">speaks</span><br />
-              you.
+              The one thing<br />
+              LeetCode<br />
+              can't{' '}
+              <span className="text-ember">simulate.</span>
             </motion.h1>
 
             <motion.p variants={fadeUp} className="mt-8 max-w-md text-base leading-relaxed text-paper-dim">
@@ -152,6 +151,9 @@ export function Home() {
         </motion.div>
       </section>
 
+      {/* Browser scroll reveal */}
+      <BrowserScrollReveal />
+
       {/* Feature strip */}
       <section className="relative border-t border-ink-700/40 bg-ink-900/40 py-20">
         <div className="mx-auto max-w-7xl px-6">
@@ -169,7 +171,7 @@ export function Home() {
                 className="group relative rounded-md border border-ink-700/60 bg-ink-900 p-8 transition-all duration-300 hover:border-ember/20 hover:shadow-card-hover"
               >
                 <p className="mb-4 font-mono text-xs tracking-widest text-ember">{num}</p>
-                <h3 className="mb-3 font-display text-xl font-semibold text-paper">{title}</h3>
+                <h3 className="mb-3 font-sans text-xl font-bold text-paper">{title}</h3>
                 <p className="text-sm leading-relaxed text-paper-dim">{body}</p>
               </motion.div>
             ))}
@@ -193,7 +195,7 @@ export function Home() {
               {companies.map((co) => (
                 <span
                   key={co}
-                  className="font-display text-lg font-semibold text-paper-faint/40 transition-colors duration-200 hover:text-paper-dim"
+                  className="font-sans text-lg font-semibold text-paper-faint/40 transition-colors duration-200 hover:text-paper-dim"
                 >
                   {co}
                 </span>
@@ -206,7 +208,7 @@ export function Home() {
       {/* Bottom CTA */}
       <section className="relative border-t border-ink-700/40 py-24">
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
-          <div className="absolute bottom-0 left-1/2 h-[300px] w-[600px] -translate-x-1/2 rounded-full bg-ember/4 blur-[80px]" />
+          <div className="absolute bottom-0 left-1/2 h-[300px] w-[600px] -translate-x-1/2 rounded-full bg-ember/3 blur-[100px]" />
         </div>
         <motion.div
           initial={{ opacity: 0, y: 24 }}
@@ -215,7 +217,7 @@ export function Home() {
           transition={{ duration: 0.55 }}
           className="mx-auto max-w-2xl px-6 text-center"
         >
-          <h2 className="mb-4 font-display text-4xl font-semibold text-paper md:text-5xl">
+          <h2 className="mb-4 font-sans text-4xl font-extrabold text-paper md:text-5xl">
             Ready to feel what a real interview feels like?
           </h2>
           <p className="mb-8 text-paper-dim">Set up your session in 60 seconds. No account required.</p>

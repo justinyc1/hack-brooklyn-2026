@@ -1,9 +1,13 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from '@clerk/clerk-react'
+import { toast } from 'sonner'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/cn'
 import { companies } from '@/lib/mock/companies'
 import { personas } from '@/lib/mock/personas'
+import { apiFetch } from '@/lib/api'
+import type { ApiSession } from '@/lib/apiTypes'
 import type { InterviewMode, Difficulty, InterviewerPersona } from '@/lib/types'
 
 interface SetupState {
@@ -94,7 +98,9 @@ const slideVariants = {
 
 export function Setup() {
   const navigate = useNavigate()
+  const { getToken } = useAuth()
   const [step, setStep] = useState(1)
+  const [loading, setLoading] = useState(false)
   const [state, setState] = useState<SetupState>({
     role: '',
     company: '',
@@ -114,12 +120,35 @@ export function Setup() {
     return false
   }
 
-  const handleStart = () => {
-    const id = 'session-1'
-    if (state.mode === 'technical') {
-      navigate(`/interview/${id}/technical`)
-    } else {
-      navigate(`/interview/${id}/behavioral`)
+  const handleStart = async () => {
+    if (loading) return
+    setLoading(true)
+    try {
+      const token = await getToken()
+      if (!token) throw new Error('Not authenticated')
+      const roleLabel = ROLES.find((r) => r.id === state.role)?.label ?? state.role
+      const companyName = companies.find((c) => c.id === state.company)?.name ?? state.company
+      const session = await apiFetch<ApiSession>('/api/interviews', token, {
+        method: 'POST',
+        body: JSON.stringify({
+          mode: state.mode,
+          role: roleLabel,
+          company: companyName,
+          difficulty: state.difficulty,
+          duration_minutes: state.durationMinutes,
+          interviewer_tone: state.persona,
+        }),
+      })
+      if (session.mode === 'technical' || session.mode === 'mixed') {
+        navigate(`/interview/${session.id}/technical`)
+      } else {
+        navigate(`/interview/${session.id}/behavioral`)
+      }
+    } catch (err) {
+      toast.error('Failed to create session. Is the backend running?')
+      console.error(err)
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -275,15 +304,15 @@ export function Setup() {
               ) : (
                 <button
                   onClick={handleStart}
-                  disabled={!canAdvance()}
+                  disabled={!canAdvance() || loading}
                   className={cn(
                     'flex items-center gap-3 rounded-sm px-8 py-3 font-mono text-sm uppercase tracking-widest transition-all duration-200',
-                    canAdvance()
+                    canAdvance() && !loading
                       ? 'bg-ember text-ink-950 hover:bg-ember-soft active:scale-[0.97]'
                       : 'bg-ink-800 text-paper-faint cursor-not-allowed'
                   )}
                 >
-                  Start interview →
+                  {loading ? 'Creating...' : 'Start interview →'}
                 </button>
               )}
             </div>

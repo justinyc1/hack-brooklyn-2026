@@ -8,18 +8,18 @@
 @import '@fontsource/jetbrains-mono/500.css';
 
 :root {
-  --ink-950: #0C0A09;
-  --ink-900: #15120F;
-  --ink-800: #1C1917;
-  --ink-700: #2A2522;
-  --ink-600: #3D3835;
-  --paper: #FAF7F2;
-  --paper-dim: #A8A29E;
-  --paper-faint: #5C5753;
-  --ember: #FF6B35;
-  --ember-soft: #FF8A5C;
-  --moss: #7E9E5C;
-  --crimson: #B23A3A;
+  --ink-950: #1A1A1C;
+  --ink-900: #1E1E20;
+  --ink-800: #252528;
+  --ink-700: #2E2E32;
+  --ink-600: #3F3F46;
+  --paper: #E4E4E7;
+  --paper-dim: #71717A;
+  --paper-faint: #3F3F46;
+  --ember: #4ADE80;
+  --ember-soft: #86EFAC;
+  --moss: #4ADE80;
+  --crimson: #F87171;
 }
 
 *, *::before, *::after {
@@ -55,7 +55,7 @@ body {
 /* Scrollbar */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: var(--ink-900); }
-::-webkit-scrollbar-thumb { background: var(--ink-600); border-radius: 3px; }
+::-webkit-scrollbar-thumb { background: var(--ink-700); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--paper-faint); }
 
 /* Focus ring */
@@ -67,11 +67,11 @@ body {
 
 /* Selection */
 ::selection {
-  background: rgba(255, 107, 53, 0.25);
+  background: rgba(74, 222, 128, 0.2);
   color: var(--paper);
 }
 
-/* Grain overlay — injected as a pseudo on body */
+/* Grain overlay */
 body::after {
   content: '';
   position: fixed;
@@ -91,6 +91,8 @@ body::after {
 .text-ember { color: var(--ember); }
 .text-paper { color: var(--paper); }
 .text-paper-dim { color: var(--paper-dim); }
+.bg-ember { background-color: var(--ember); }
+.bg-ember-soft { background-color: var(--ember-soft); }
 .bg-ink-950 { background: var(--ink-950); }
 
 /* Ember underline link */
@@ -108,12 +110,12 @@ body::after {
 /* Card surface */
 .surface {
   background: var(--ink-900);
-  border: 1px solid rgba(250, 247, 242, 0.06);
-  box-shadow: 0 1px 0 rgba(250,247,242,0.04), 0 20px 48px -24px rgba(0,0,0,0.9);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 1px 0 rgba(255,255,255,0.03), 0 4px 16px -4px rgba(0,0,0,0.5);
 }
 
 .surface-raised {
   background: var(--ink-800);
-  border: 1px solid rgba(250, 247, 242, 0.08);
-  box-shadow: 0 1px 0 rgba(250,247,242,0.04), 0 8px 24px -8px rgba(0,0,0,0.7);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  box-shadow: 0 1px 0 rgba(255,255,255,0.03), 0 8px 24px -8px rgba(0,0,0,0.6);
 }
