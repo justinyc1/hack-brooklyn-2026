@@ -12,9 +12,12 @@ from schemas.interviews import (
     AgentUrlResponse,
     CreateSessionRequest,
     PatchSessionRequest,
+    ProblemResponse,
+    QuestionResponse,
     SessionListResponse,
     SessionResponse,
 )
+from services.code_runner import load_problem
 from services.elevenlabs import create_interview_agent, get_signed_url, sync_transcript
 from services.feedback import generate_feedback
 from services.question_planner import plan_questions
@@ -114,6 +117,49 @@ def get_session(
 ):
     doc = _get_owned_session(session_id, clerk_user_id)
     return _session_to_response(doc)
+
+
+@router.get("/{session_id}/questions", response_model=list[QuestionResponse])
+def get_session_questions(
+    session_id: str,
+    clerk_user_id: str = Depends(require_auth),
+):
+    doc = _get_owned_session(session_id, clerk_user_id)
+    question_ids = doc.get("question_ids", [])
+    valid_oids = []
+    for qid in question_ids:
+        try:
+            valid_oids.append(ObjectId(qid))
+        except Exception:
+            pass
+    questions = list(db.questions.find({"_id": {"$in": valid_oids}}))
+    questions.sort(key=lambda q: q.get("order", 0))
+
+    result = []
+    for q in questions:
+        problem = None
+        coding_problem_id = q.get("coding_problem_id")
+        if coding_problem_id:
+            raw = load_problem(coding_problem_id)
+            if raw:
+                problem = {
+                    "id": raw["id"],
+                    "title": raw["title"],
+                    "difficulty": raw["difficulty"],
+                    "description": raw["description"],
+                    "examples": raw.get("examples", []),
+                    "constraints": raw.get("constraints", []),
+                    "starter_code": raw.get("starter_code", {}),
+                }
+        result.append(QuestionResponse(
+            id=str(q["_id"]),
+            type=q.get("type", "behavioral"),
+            prompt=q.get("prompt", ""),
+            order=q.get("order", 0),
+            coding_problem_id=coding_problem_id,
+            problem=problem,
+        ))
+    return result
 
 
 @router.get("/{session_id}/agent-url", response_model=AgentUrlResponse)
