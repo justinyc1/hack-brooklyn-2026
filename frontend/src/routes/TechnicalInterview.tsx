@@ -2,11 +2,13 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '@clerk/clerk-react'
 import Editor from '@monaco-editor/react'
+import { Conversation } from '@11labs/client'
+import type { Status } from '@11labs/client'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'sonner'
 import { cn } from '@/lib/cn'
 import { apiFetch } from '@/lib/api'
-import type { ApiSession, ApiQuestion, ApiCodeRunResult } from '@/lib/apiTypes'
+import type { ApiSession, ApiQuestion, ApiCodeRunResult, ApiAgentUrl } from '@/lib/apiTypes'
 import type { Language } from '@/lib/types'
 
 const LANGUAGES: { id: Language; label: string }[] = [
@@ -56,6 +58,8 @@ interface TestResultUI {
   passed?: boolean
 }
 
+interface TranscriptLine { speaker: 'ai' | 'user'; text: string }
+
 export function TechnicalInterview() {
   const { id: sessionId } = useParams<{ id: string }>()
   const navigate = useNavigate()
@@ -71,12 +75,26 @@ export function TechnicalInterview() {
   const [testResults, setTestResults] = useState<TestResultUI[]>([])
   const [running, setRunning] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+
+  const [connecting, setConnecting] = useState(true)
+  const [interviewerSpeaking, setInterviewerSpeaking] = useState(false)
+  const [muted, setMuted] = useState(false)
+  const [transcript, setTranscript] = useState<TranscriptLine[]>([])
+
+  const convRef = useRef<Awaited<ReturnType<typeof Conversation.startSession>> | null>(null)
   const transcriptRef = useRef<HTMLDivElement>(null)
 
   const totalSecs = (session?.duration_minutes ?? 45) * 60
   const { timeStr, seconds: remainSecs } = useCountdown(totalSecs)
 
-  // Load session + questions on mount
+  // Auto-scroll transcript
+  useEffect(() => {
+    if (transcriptRef.current) {
+      transcriptRef.current.scrollTop = transcriptRef.current.scrollHeight
+    }
+  }, [transcript])
+
+  // Load session + questions + start ElevenLabs on mount
   useEffect(() => {
     if (!sessionId) return
     let cancelled = false
@@ -84,9 +102,10 @@ export function TechnicalInterview() {
       try {
         const token = await getToken()
         if (!token) return
-        const [sess, questions] = await Promise.all([
+        const [sess, questions, agentUrl] = await Promise.all([
           apiFetch<ApiSession>(`/api/interviews/${sessionId}`, token),
           apiFetch<ApiQuestion[]>(`/api/interviews/${sessionId}/questions`, token),
+          apiFetch<ApiAgentUrl>(`/api/interviews/${sessionId}/agent-url`, token),
         ])
         if (cancelled) return
         setSession(sess)
@@ -104,13 +123,55 @@ export function TechnicalInterview() {
             body: JSON.stringify({ status: 'active' }),
           })
         }
+
+        const conversation = await Conversation.startSession({
+          signedUrl: agentUrl.signed_url,
+          onMessage: ({ message, source }: { message: string; source: 'ai' | 'user' }) => {
+            setTranscript((t) => [...t, { speaker: source, text: message }])
+          },
+          onModeChange: ({ mode }: { mode: 'speaking' | 'listening' }) => {
+            setInterviewerSpeaking(mode === 'speaking')
+          },
+          onStatusChange: ({ status }: { status: Status }) => {
+            if (status === 'connected') setConnecting(false)
+          },
+          onError: (message: string, context?: unknown) => {
+            console.error('ElevenLabs error', message, context)
+          },
+        })
+
+        if (cancelled) {
+          await conversation.endSession()
+          return
+        }
+
+        convRef.current = conversation
+        const convId = conversation.getId()
+
+        if (convId) {
+          const t = await getToken()
+          if (t) {
+            await apiFetch(`/api/interviews/${sessionId}`, t, {
+              method: 'PATCH',
+              body: JSON.stringify({ elevenlabs_conversation_id: convId }),
+            })
+          }
+        }
+
+        setConnecting(false)
       } catch (err) {
-        if (!cancelled) setLoadError('Failed to load session.')
+        if (!cancelled) {
+          setLoadError('Failed to load session.')
+          setConnecting(false)
+        }
         console.error(err)
       }
     }
     load()
-    return () => { cancelled = true }
+    return () => {
+      cancelled = true
+      convRef.current?.endSession().catch(() => {})
+    }
   }, [sessionId, getToken])
 
   const handleLanguageChange = (lang: Language) => {
@@ -185,6 +246,7 @@ export function TechnicalInterview() {
   const endSession = async (tokenArg?: string) => {
     if (!sessionId) return
     try {
+      await convRef.current?.endSession()
       const token = tokenArg ?? (await getToken())
       if (!token) return
       await apiFetch(`/api/interviews/${sessionId}`, token, {
@@ -377,18 +439,73 @@ export function TechnicalInterview() {
         <div className="flex w-[280px] shrink-0 flex-col border-l border-ink-700/60 bg-ink-900">
           <div className="border-b border-ink-700/60 p-4">
             <div className="flex items-center gap-3 mb-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-full border border-ink-700/80 bg-ink-800 font-display text-sm font-semibold text-paper">
+              <div className="relative flex h-9 w-9 items-center justify-center rounded-full border border-ink-700/80 bg-ink-800 font-display text-sm font-semibold text-paper">
                 {personaInitial}
+                {interviewerSpeaking && (
+                  <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-ember animate-pulse border border-ink-900" />
+                )}
               </div>
               <div>
                 <p className="text-sm font-medium text-paper">AI Interviewer</p>
-                <p className="font-mono text-[10px] text-paper-faint capitalize">{persona}</p>
+                <p className="font-mono text-[10px] text-paper-faint capitalize">
+                  {connecting ? 'Connecting...' : interviewerSpeaking ? 'Speaking' : persona}
+                </p>
               </div>
+              {interviewerSpeaking && (
+                <div className="ml-auto flex items-center gap-1">
+                  {[1, 2, 3].map((i) => (
+                    <motion.div
+                      key={i}
+                      animate={{ scaleY: [1, 2.5, 1] }}
+                      transition={{ repeat: Infinity, duration: 0.6, delay: i * 0.15 }}
+                      className="h-3 w-0.5 rounded-full bg-ember origin-bottom"
+                    />
+                  ))}
+                </div>
+              )}
             </div>
+
+            <button
+              onClick={() => {
+                const newMuted = !muted
+                setMuted(newMuted)
+                try { convRef.current?.setVolume?.({ volume: newMuted ? 0 : 1 }) } catch {}
+              }}
+              className={cn(
+                'w-full rounded-sm border px-3 py-1.5 font-mono text-xs uppercase tracking-widest transition-all duration-200',
+                muted
+                  ? 'border-crimson/40 bg-crimson/10 text-crimson'
+                  : 'border-ink-700/60 text-paper-faint hover:border-paper-faint/30 hover:text-paper-dim'
+              )}
+            >
+              {muted ? '⊘ Muted' : '⊙ Mute'}
+            </button>
           </div>
 
           <div ref={transcriptRef} className="flex-1 overflow-y-auto p-4 space-y-3 scroll-smooth">
-            <p className="font-mono text-[10px] text-paper-faint/50">Voice interview active via ElevenLabs. Transcript appears after session ends.</p>
+            {connecting ? (
+              <p className="font-mono text-[10px] text-paper-faint/50 animate-pulse">Connecting to interviewer...</p>
+            ) : transcript.length === 0 ? (
+              <p className="font-mono text-[10px] text-paper-faint/50">Transcript will appear here...</p>
+            ) : (
+              transcript.map((seg, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, x: -6 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.25 }}
+                  className="flex gap-2"
+                >
+                  <span className={cn(
+                    'mt-0.5 shrink-0 font-mono text-[9px] font-medium uppercase',
+                    seg.speaker === 'ai' ? 'text-paper-faint' : 'text-ember'
+                  )}>
+                    {seg.speaker === 'ai' ? 'INT' : 'YOU'}
+                  </span>
+                  <p className="text-xs leading-relaxed text-paper-dim">{seg.text}</p>
+                </motion.div>
+              ))
+            )}
           </div>
 
           <div className="flex items-center justify-end border-t border-ink-700/60 p-4">

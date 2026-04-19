@@ -91,8 +91,8 @@ async def create_session(
     agent_id: str | None = None
     try:
         agent_id = await create_interview_agent(session, questions)
-    except Exception:
-        logger.exception("ElevenLabs agent creation failed for session %s", session_id)
+    except Exception as exc:
+        logger.error("ElevenLabs agent creation failed for session %s: %s", session_id, exc)
 
     db.sessions.update_one(
         {"_id": ObjectId(session_id)},
