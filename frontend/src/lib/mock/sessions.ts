@@ -5,7 +5,7 @@ export const mockSessions: InterviewSession[] = [
     id: 'session-1',
     mode: 'technical',
     company: 'Google',
-    role: 'SWE Intern',
+    role: 'Software Engineer Intern',
     difficulty: 'medium',
     durationMinutes: 45,
     persona: 'neutral',

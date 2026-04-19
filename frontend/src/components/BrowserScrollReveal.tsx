@@ -1,5 +1,5 @@
 import { useRef } from 'react'
-import { motion, useScroll, useTransform } from 'framer-motion'
+import { motion, useScroll, useTransform, useSpring } from 'framer-motion'
 
 function ProblemPanel() {
   return (
@@ -126,23 +126,24 @@ export function BrowserScrollReveal() {
   const browserY  = useTransform(scrollYProgress, [0, 0.25], [80, 0])
   const browserOp = useTransform(scrollYProgress, [0, 0.2],  [0, 1])
 
-  // Tilt unfolds while browser is in view (0 → 0.45)
-  const rotateX   = useTransform(scrollYProgress, [0, 0.45], [22, 0])
+  // Tilt unfolds only after browser is fully visible (0.25 → 0.55)
+  const rotateXRaw = useTransform(scrollYProgress, [0.25, 0.55], [22, 0])
+  const rotateX    = useSpring(rotateXRaw, { stiffness: 60, damping: 18, mass: 0.4 })
 
-  // Glare sweeps once mid-unfold (0.15 → 0.42)
-  const glareX  = useTransform(scrollYProgress, [0.15, 0.42], ['-110%', '210%'])
-  const glareOp = useTransform(scrollYProgress, [0.15, 0.28, 0.42], [0, 0.28, 0])
+  // Glare sweeps once mid-unfold (0.32 → 0.52)
+  const glareX  = useTransform(scrollYProgress, [0.32, 0.52], ['-110%', '210%'])
+  const glareOp = useTransform(scrollYProgress, [0.32, 0.42, 0.52], [0, 0.28, 0])
 
-  // Ambient glow after landing (0.45 → 0.58)
-  const glowOp = useTransform(scrollYProgress, [0.45, 0.58], [0, 1])
+  // Ambient glow after landing (0.55 → 0.66)
+  const glowOp = useTransform(scrollYProgress, [0.55, 0.66], [0, 1])
 
-  // Labels staggered after browser is flat (0.48 → 0.72)
-  const l1Op = useTransform(scrollYProgress, [0.48, 0.58], [0, 1])
-  const l1Y  = useTransform(scrollYProgress, [0.48, 0.58], [10, 0])
-  const l2Op = useTransform(scrollYProgress, [0.53, 0.63], [0, 1])
-  const l2Y  = useTransform(scrollYProgress, [0.53, 0.63], [10, 0])
-  const l3Op = useTransform(scrollYProgress, [0.58, 0.68], [0, 1])
-  const l3Y  = useTransform(scrollYProgress, [0.58, 0.68], [10, 0])
+  // Labels staggered after browser is flat (0.45 → 0.62)
+  const l1Op = useTransform(scrollYProgress, [0.45, 0.53], [0, 1])
+  const l1Y  = useTransform(scrollYProgress, [0.45, 0.53], [10, 0])
+  const l2Op = useTransform(scrollYProgress, [0.49, 0.57], [0, 1])
+  const l2Y  = useTransform(scrollYProgress, [0.49, 0.57], [10, 0])
+  const l3Op = useTransform(scrollYProgress, [0.53, 0.61], [0, 1])
+  const l3Y  = useTransform(scrollYProgress, [0.53, 0.61], [10, 0])
 
   return (
     <section className="relative py-28">
@@ -157,11 +158,11 @@ export function BrowserScrollReveal() {
         <p className="font-mono text-xs uppercase tracking-widest text-ember mb-5">
           ▶ watch it in action
         </p>
-        <h2 className="font-display text-[clamp(2.4rem,5vw,4rem)] font-semibold text-paper leading-[1.05] tracking-tight">
-          The whole interview,<br />in one view.
+        <h2 className="font-sans text-4xl font-extrabold text-paper md:text-5xl">
+          Simulate the interview. Not just the code.
         </h2>
         <p className="mt-4 text-paper-dim text-base max-w-sm mx-auto leading-relaxed">
-          Problem, code, and your AI interviewer — all live, all connected.
+          Problem, code, and a live AI interviewer in one flow.
         </p>
       </motion.div>
 
@@ -173,10 +174,10 @@ export function BrowserScrollReveal() {
           style={{ opacity: l1Op, y: l1Y }}
           className="absolute left-0 top-1/2 -translate-y-1/2 z-10 hidden lg:flex items-center gap-2"
         >
-          <span className="font-mono text-[10px] text-paper-faint border border-ink-700/70 bg-ink-900 rounded-sm px-2.5 py-1 whitespace-nowrap">
+          <span className="font-mono text-[10px] text-paper border border-ember/35 bg-ember/8 rounded-sm px-2.5 py-1 whitespace-nowrap shadow-[0_0_8px_rgba(255,107,53,0.15)]">
             Problem statement
           </span>
-          <div className="w-5 h-px bg-ink-700/40" />
+          <div className="w-5 h-px bg-ember/30" />
         </motion.div>
 
         {/* Label — top center */}
@@ -194,8 +195,8 @@ export function BrowserScrollReveal() {
           style={{ opacity: l3Op, y: l3Y }}
           className="absolute right-0 top-1/2 -translate-y-1/2 z-10 hidden lg:flex items-center gap-2"
         >
-          <div className="w-5 h-px bg-ink-700/40" />
-          <span className="font-mono text-[10px] text-paper-faint border border-ink-700/70 bg-ink-900 rounded-sm px-2.5 py-1 whitespace-nowrap">
+          <div className="w-5 h-px bg-ember/30" />
+          <span className="font-mono text-[10px] text-paper border border-ember/35 bg-ember/8 rounded-sm px-2.5 py-1 whitespace-nowrap shadow-[0_0_8px_rgba(255,107,53,0.15)]">
             AI interviewer
           </span>
         </motion.div>

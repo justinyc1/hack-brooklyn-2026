@@ -8,7 +8,7 @@ import { apiFetch } from '@/lib/api'
 import type { ApiFeedbackReport } from '@/lib/apiTypes'
 
 const stagger = { hidden: {}, show: { transition: { staggerChildren: 0.08 } } }
-const fadeUp = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } } }
+const fadeUp = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" as const } } }
 
 interface MetricScore { label: string; score: number; max: number }
 interface QuestionFeedbackUI {
@@ -156,7 +156,10 @@ export function Feedback() {
 
   useEffect(() => {
     if (!loading) return
-    if (pollCount >= 40) { setLoading(false); return }
+    if (pollCount >= 40) {
+      setTimeout(() => setLoading(false), 0)
+      return
+    }
     const id = setTimeout(() => setPollCount((n) => n + 1), 3000)
     return () => clearTimeout(id)
   }, [pollCount, loading])
@@ -248,7 +251,7 @@ export function Feedback() {
 
         {drills.length > 0 && (
           <motion.div variants={fadeUp} className="mb-10">
-            <p className="mb-4 font-mono text-xs uppercase tracking-widest text-paper-faint">Suggested drills</p>
+            <p className="mb-4 font-mono text-xs uppercase tracking-widest text-paper-faint">AREAS TO IMPROVE</p>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               {drills.map((d, i) => (
                 <div key={i} className="rounded-md border border-ink-700/60 bg-ink-900 p-5">

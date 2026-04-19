@@ -3,7 +3,6 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { useAuth, useClerk } from '@clerk/clerk-react'
 import { Toaster } from 'sonner'
 import { NavBar } from '@/components/layout/NavBar'
-import { Footer } from '@/components/layout/Footer'
 import { Home } from '@/routes/Home'
 import { Setup } from '@/routes/Setup'
 import { TechnicalInterview } from '@/routes/TechnicalInterview'
@@ -39,7 +38,6 @@ export default function App() {
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
-      <Footer />
       <Toaster
         position="bottom-right"
         toastOptions={{

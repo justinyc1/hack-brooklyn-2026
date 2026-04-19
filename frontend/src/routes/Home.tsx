@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { BrowserScrollReveal } from '../components/BrowserScrollReveal'
+import { LiquidGlass } from '../components/LiquidGlass'
 
 const stagger = {
   hidden: {},
@@ -8,7 +9,7 @@ const stagger = {
 }
 const fadeUp = {
   hidden: { opacity: 0, y: 24 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.55, ease: "easeOut" } },
+  show: { opacity: 1, y: 0, transition: { duration: 0.55, ease: "easeOut" as const } as const},
 }
 
 const sampleTranscript = [
@@ -74,8 +75,7 @@ export function Home() {
             </motion.h1>
 
             <motion.p variants={fadeUp} className="mt-8 max-w-md text-base leading-relaxed text-paper-dim">
-              Realistic SWE mock interviews with a live voice AI — coding, behavioral, or both.
-              Adaptive follow-ups, real pressure, evidence-based feedback.
+            Realistic SWE mock interviews with a live AI Interviewer. Practice coding, behavioral, or both. Adaptive follow-up questions, real pressure, clear evidence-based feedback.
             </motion.p>
 
             <motion.div variants={fadeUp} className="mt-10 flex flex-wrap items-center gap-4">
@@ -116,7 +116,7 @@ export function Home() {
               </div>
 
               <div className="mb-4 rounded-sm border border-ink-700/50 bg-ink-800 px-3 py-2">
-                <p className="font-mono text-xs text-paper-faint">Two Sum — Medium</p>
+                <p className="font-mono text-xs text-paper-faint">Two Sum — Easy</p>
               </div>
 
               <div className="space-y-3">
@@ -162,17 +162,15 @@ export function Home() {
             initial="hidden"
             whileInView="show"
             viewport={{ once: true, margin: '-80px' }}
-            className="grid grid-cols-1 gap-6 md:grid-cols-3"
+            className="grid grid-cols-1 gap-6 md:grid-cols-3 md:items-stretch"
           >
             {features.map(({ num, title, body }) => (
-              <motion.div
-                key={num}
-                variants={fadeUp}
-                className="group relative rounded-md border border-ink-700/60 bg-ink-900 p-8 transition-all duration-300 hover:border-ember/20 hover:shadow-card-hover"
-              >
-                <p className="mb-4 font-mono text-xs tracking-widest text-ember">{num}</p>
-                <h3 className="mb-3 font-sans text-xl font-bold text-paper">{title}</h3>
-                <p className="text-sm leading-relaxed text-paper-dim">{body}</p>
+              <motion.div key={num} variants={fadeUp} className="flex">
+                <LiquidGlass className="p-8 flex-1">
+                  <p className="mb-4 font-mono text-xs tracking-widest text-ember">{num}</p>
+                  <h3 className="mb-3 font-sans text-xl font-bold text-paper">{title}</h3>
+                  <p className="text-sm leading-relaxed text-paper-dim">{body}</p>
+                </LiquidGlass>
               </motion.div>
             ))}
           </motion.div>

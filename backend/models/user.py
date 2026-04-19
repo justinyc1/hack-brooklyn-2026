@@ -11,6 +11,6 @@ class UserPreferences(MongoBase):
 
 class User(MongoBase):
     clerk_user_id: str
-    email: str
+    email: str = ""
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     preferences: UserPreferences = Field(default_factory=UserPreferences)

@@ -1,4 +1,5 @@
 import base64
+from datetime import datetime, timezone
 from functools import lru_cache
 
 import jwt
@@ -6,6 +7,7 @@ from jwt import PyJWKClient
 from fastapi import Depends, Header, HTTPException, status
 
 from config import settings
+from db import db
 
 
 def _jwks_url() -> str:
@@ -61,4 +63,14 @@ def require_auth(authorization: str | None = Header(default=None)) -> str:
         )
     token = authorization.removeprefix("Bearer ")
     claims = verify_token(token)
-    return claims["sub"]  # sub = clerk_user_id
+    clerk_user_id: str = claims["sub"]
+    _upsert_user(clerk_user_id)
+    return clerk_user_id
+
+
+def _upsert_user(clerk_user_id: str) -> None:
+    db.users.update_one(
+        {"clerk_user_id": clerk_user_id},
+        {"$setOnInsert": {"clerk_user_id": clerk_user_id, "email": "", "created_at": datetime.now(timezone.utc), "preferences": {}}},
+        upsert=True,
+    )

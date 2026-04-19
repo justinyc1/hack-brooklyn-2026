@@ -20,7 +20,7 @@ interface SetupState {
 }
 
 const ROLES = [
-  { id: 'intern', label: 'SWE Intern', hint: 'Data structures, algorithms, behavioral' },
+  { id: 'intern', label: 'Software Engineer Intern', hint: 'Data structures, algorithms, behavioral' },
   { id: 'new-grad', label: 'New Grad SWE', hint: 'Core SWE loop, system design intro' },
   { id: 'mid', label: 'Mid-Level SWE', hint: 'System design, technical depth, ownership' },
   { id: 'senior', label: 'Senior SWE', hint: 'System design, leadership, execution' },
@@ -92,7 +92,7 @@ function OptionCard({
 
 const slideVariants = {
   enter: { opacity: 0, x: 32 },
-  center: { opacity: 1, x: 0, transition: { duration: 0.35, ease: "easeOut" } },
+  center: { opacity: 1, x: 0, transition: { duration: 0.35, ease: "easeOut" as const } },
   exit: { opacity: 0, x: -24, transition: { duration: 0.2 } },
 }
 

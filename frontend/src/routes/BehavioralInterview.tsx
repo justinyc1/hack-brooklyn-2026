@@ -8,8 +8,11 @@ import { cn } from '@/lib/cn'
 import { apiFetch } from '@/lib/api'
 import type { ApiSession, ApiAgentUrl } from '@/lib/apiTypes'
 
-function useCountdown(initialSeconds: number) {
-  const [seconds, setSeconds] = useState(initialSeconds)
+function useCountdown(totalSecs: number) {
+  const [seconds, setSeconds] = useState(totalSecs)
+  useEffect(() => {
+    if (totalSecs > 0) setSeconds(totalSecs)
+  }, [totalSecs])
   useEffect(() => {
     if (seconds <= 0) return
     const id = setInterval(() => setSeconds((s) => s - 1), 1000)
@@ -265,7 +268,7 @@ export function BehavioralInterview() {
                   onClick={() => {
                     const newMuted = !muted
                     setMuted(newMuted)
-                    try { convRef.current?.setVolume?.({ volume: newMuted ? 0 : 1 }) } catch {}
+                    try { convRef.current?.setMicMuted(newMuted) } catch {}
                   }}
                   className={cn(
                     'rounded-sm border px-4 py-2 font-mono text-xs uppercase tracking-widest transition-all duration-200',

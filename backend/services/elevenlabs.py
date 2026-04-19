@@ -1,5 +1,6 @@
 """ElevenLabs Conversational AI integration.
 
+
 Flow per interview session:
   1. create_interview_agent()  — one agent per session, returns agent_id
   2. get_signed_url()          — returns a short-lived wss:// URL the frontend uses
@@ -7,16 +8,21 @@ Flow per interview session:
                                  conversation transcript and persists to MongoDB
 """
 
+
 from datetime import datetime, timedelta, timezone
+
 
 import httpx
 from bson import ObjectId
+
 
 from config import settings
 from db import db
 from models.transcript import Speaker, TranscriptSegment
 
+
 ELEVENLABS_BASE = "https://api.elevenlabs.io/v1"
+
 
 _TONE_PERSONA = {
     "friendly": (
@@ -38,23 +44,30 @@ _TONE_PERSONA = {
 }
 
 
+
+
 def _build_system_prompt(session, questions: list) -> str:
     persona = _TONE_PERSONA.get(session.interviewer_tone.value, _TONE_PERSONA["neutral"])
     mode = session.mode.value
     company_str = f" at {session.company}" if session.company else ""
     duration = session.duration_minutes
 
+
     question_list = "\n".join(
         f"{i + 1}. [{q.type.value.upper()}] {q.prompt}" for i, q in enumerate(questions)
     )
 
+
     return f"""{persona}
+
 
 You are conducting a {mode} mock interview for a {session.role} position{company_str}. \
 The interview lasts approximately {duration} minutes.
 
+
 Interview plan — ask these questions in order, then follow up naturally based on the candidate's responses:
 {question_list}
+
 
 Conduct guidelines:
 - Open with a brief professional greeting and a one-sentence description of the format.
@@ -62,7 +75,20 @@ Conduct guidelines:
 - If an answer is vague, incomplete, or lacks a concrete example, ask a targeted follow-up.
 - Do not skip questions unless time is clearly running out.
 - Close the interview professionally once all questions are covered or time is nearly up.
-- Stay in character throughout — do not break the fourth wall or mention that you are an AI."""
+- Stay in character throughout — do not break the fourth wall or mention that you are an AI.
+- You have two background tools for technical interviews. Tool calls are completely silent — never mention them, never say their names, never say you are "calling a tool" or "looking at the code now". Just use the result naturally in your response.
+  * NEVER ask the candidate to read, paste, or describe their code aloud. You can retrieve it yourself.
+  * NEVER say "could you share your code" or "walk me through what you wrote".
+  * Silently call get_current_code and use the result whenever:
+    - The candidate says anything like "I'm done", "finished", "ready", "let me know what you think", "does this make sense", "is this right", "does this look good", or asks for feedback or a hint
+    - You are about to comment on their approach or implementation
+    - The candidate has been silent for more than two minutes
+  * Silently call get_test_results and use the result whenever:
+    - The candidate mentions running or submitting their code
+    - The candidate asks why their code isn't working or what the results look like
+- When reviewing code, act like a real interviewer: ask guiding questions and give directional hints only. Never reveal the solution or write correct code for them. If their approach is wrong, point them toward rethinking a specific part ("have you considered what happens when..."). If their approach is right but incomplete, ask what edge cases they might be missing. Keep code feedback concise — one observation at a time."""
+
+
 
 
 async def create_interview_agent(session, questions: list) -> str:
@@ -73,6 +99,7 @@ async def create_interview_agent(session, questions: list) -> str:
         f"{session.role} position{company_str}. We have about {session.duration_minutes} minutes. "
         f"Let's get started — could you begin by briefly introducing yourself?"
     )
+
 
     payload = {
         "name": f"Interviewer-{session.id}",
@@ -85,6 +112,28 @@ async def create_interview_agent(session, questions: list) -> str:
                 },
                 "first_message": first_message,
                 "language": "en",
+                "tools": [
+                    {
+                        "type": "client",
+                        "name": "get_current_code",
+                        "description": "Returns the candidate's current code and the programming language they selected. Call this whenever you need to see the code — never ask the candidate to share it verbally.",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {},
+                            "required": [],
+                        },
+                    },
+                    {
+                        "type": "client",
+                        "name": "get_test_results",
+                        "description": "Returns the latest test case run results: how many passed, how many failed, and the output for each. Call this after the candidate runs or submits their code.",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {},
+                            "required": [],
+                        },
+                    },
+                ],
             },
             "tts": {
                 "model_id": "eleven_turbo_v2",
@@ -100,6 +149,7 @@ async def create_interview_agent(session, questions: list) -> str:
         },
     }
 
+
     async with httpx.AsyncClient(timeout=20) as client:
         resp = await client.post(
             f"{ELEVENLABS_BASE}/convai/agents/create",
@@ -109,6 +159,8 @@ async def create_interview_agent(session, questions: list) -> str:
         if not resp.is_success:
             raise RuntimeError(f"ElevenLabs agent creation failed {resp.status_code}: {resp.text}")
         return resp.json()["agent_id"]
+
+
 
 
 async def get_signed_url(agent_id: str) -> str:
@@ -123,8 +175,11 @@ async def get_signed_url(agent_id: str) -> str:
         return resp.json()["signed_url"]
 
 
+
+
 async def sync_transcript(session_id: str, conversation_id: str, started_at: datetime | None = None) -> int:
     """Fetch the ElevenLabs conversation transcript and upsert into MongoDB.
+
 
     Returns the number of segments written.
     """
@@ -136,14 +191,18 @@ async def sync_transcript(session_id: str, conversation_id: str, started_at: dat
         resp.raise_for_status()
         data = resp.json()
 
+
     raw_segments: list[dict] = data.get("transcript", [])
     if not raw_segments:
         return 0
 
+
     base_time = started_at or datetime.now(timezone.utc)
+
 
     # Replace any previously synced segments to avoid duplicates on retry
     db.transcripts.delete_many({"session_id": session_id, "is_partial": False})
+
 
     docs = []
     for seg in raw_segments:
@@ -151,6 +210,7 @@ async def sync_transcript(session_id: str, conversation_id: str, started_at: dat
         speaker = Speaker.interviewer if role == "agent" else Speaker.user
         offset_secs = seg.get("time_in_call_secs", 0.0)
         timestamp = base_time + timedelta(seconds=offset_secs)
+
 
         segment = TranscriptSegment(
             session_id=session_id,
@@ -161,7 +221,9 @@ async def sync_transcript(session_id: str, conversation_id: str, started_at: dat
         )
         docs.append(segment.to_mongo())
 
+
     if docs:
         db.transcripts.insert_many(docs)
+
 
     return len(docs)
