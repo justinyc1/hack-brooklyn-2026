@@ -24,6 +24,55 @@ from models.transcript import Speaker, TranscriptSegment
 ELEVENLABS_BASE = "https://api.elevenlabs.io/v1"
 
 
+# voice_id: ElevenLabs pre-made voice IDs
+# stability: 0=expressive/varied, 1=consistent/monotone
+# similarity_boost: faithfulness to the original voice character
+_TONE_VOICE = {
+    "friendly": {
+        "voice_id": "21m00Tcm4TlvDq8ikWAM",  # Rachel — calm, warm American female
+        "stability": 0.65,
+        "similarity_boost": 0.80,
+    },
+    "neutral": {
+        "voice_id": "JBFqnCBsd6RMkjVDRZzb",  # George — articulate, measured British male
+        "stability": 0.70,
+        "similarity_boost": 0.75,
+    },
+    "intense": {
+        "voice_id": "pNInz6obpgDQGcFmaJgB",  # Adam — deep, commanding American male
+        "stability": 0.38,
+        "similarity_boost": 0.92,
+    },
+    "skeptical": {
+        "voice_id": "N2lVS1w4EtoT3dr4eOWO",  # Callum — edgy, skeptical British male
+        "stability": 0.52,
+        "similarity_boost": 0.85,
+    },
+}
+
+_BEHAVIORAL_VOICE = {
+    "supportive": {
+        "voice_id": "EXAVITQu4vr4xnSDxMaL",  # Sarah — gentle, warm female
+        "stability": 0.65,
+        "similarity_boost": 0.80,
+    },
+    "corporate": {
+        "voice_id": "onwK4e9ZLuTAKqWW03F9",  # Daniel — authoritative British male
+        "stability": 0.75,
+        "similarity_boost": 0.75,
+    },
+    "pressure": {
+        "voice_id": "D38z5RcWu1voky8WS1ja",  # Fin — confident, fast Irish male
+        "stability": 0.32,
+        "similarity_boost": 0.92,
+    },
+    "probing": {
+        "voice_id": "2EiwWnXFnvU5JabPnv8n",  # Clyde — mature, scrutinizing American male
+        "stability": 0.50,
+        "similarity_boost": 0.87,
+    },
+}
+
 _TONE_PERSONA = {
     "friendly": (
         "You are a warm, encouraging interviewer. Be supportive and put the candidate at ease, "
@@ -142,13 +191,15 @@ Conduct guidelines:
 
 async def create_interview_agent(session, questions: list) -> str:
     """Create a per-session ElevenLabs conversational agent. Returns agent_id."""
+    tone_key = session.interviewer_tone.value if session.interviewer_tone else "neutral"
+    voice_cfg = _TONE_VOICE.get(tone_key, _TONE_VOICE["neutral"])
+
     company_str = f" at {session.company}" if session.company else ""
     first_message = (
         f"Hello! Thank you for joining today. I'll be your interviewer for the "
         f"{session.role} position{company_str}. We have about {session.duration_minutes} minutes. "
         f"Let's get started — could you begin by briefly introducing yourself?"
     )
-
 
     payload = {
         "name": f"Interviewer-{session.id}",
@@ -186,9 +237,10 @@ async def create_interview_agent(session, questions: list) -> str:
             },
             "tts": {
                 "model_id": "eleven_turbo_v2",
+                "voice_id": voice_cfg["voice_id"],
                 "optimize_streaming_latency": 3,
-                "stability": 0.5,
-                "similarity_boost": 0.8,
+                "stability": voice_cfg["stability"],
+                "similarity_boost": voice_cfg["similarity_boost"],
             },
             "asr": {"quality": "high"},
             "turn": {"turn_timeout": 8},
@@ -212,6 +264,9 @@ async def create_interview_agent(session, questions: list) -> str:
 
 async def create_behavioral_agent(session, questions: list) -> str:
     """Create a per-session ElevenLabs agent for behavioral interviews. Returns agent_id."""
+    persona_key = session.behavioral_persona.value if session.behavioral_persona else "supportive"
+    voice_cfg = _BEHAVIORAL_VOICE.get(persona_key, _BEHAVIORAL_VOICE["supportive"])
+
     first_message = (
         f"Hello! Thank you for joining today. I'll be conducting your behavioral interview — "
         f"we have about {session.duration_minutes} minutes. "
@@ -233,9 +288,10 @@ async def create_behavioral_agent(session, questions: list) -> str:
             },
             "tts": {
                 "model_id": "eleven_turbo_v2",
+                "voice_id": voice_cfg["voice_id"],
                 "optimize_streaming_latency": 3,
-                "stability": 0.5,
-                "similarity_boost": 0.8,
+                "stability": voice_cfg["stability"],
+                "similarity_boost": voice_cfg["similarity_boost"],
             },
             "asr": {"quality": "high"},
             "turn": {"turn_timeout": 8},
