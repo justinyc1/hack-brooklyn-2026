@@ -7,6 +7,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from auth.clerk import require_auth
 from db import db
 from models.interview_session import InterviewSession, SessionStatus
+from routes._helpers import session_to_response
 from models.question import Question
 from schemas.interviews import (
     AgentUrlResponse,
@@ -25,27 +26,6 @@ from services.question_planner import plan_questions
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/interviews", tags=["interviews"])
-
-
-def _session_to_response(doc: dict) -> SessionResponse:
-    session = InterviewSession.from_mongo(doc)
-    return SessionResponse(
-        id=session.id,
-        clerk_user_id=session.clerk_user_id,
-        mode=session.mode,
-        role=session.role,
-        company=session.company,
-        difficulty=session.difficulty,
-        duration_minutes=session.duration_minutes,
-        interviewer_tone=session.interviewer_tone,
-        status=session.status,
-        question_ids=session.question_ids,
-        elevenlabs_agent_id=session.elevenlabs_agent_id,
-        elevenlabs_conversation_id=session.elevenlabs_conversation_id,
-        created_at=session.created_at,
-        started_at=session.started_at,
-        ended_at=session.ended_at,
-    )
 
 
 def _get_owned_session(session_id: str, clerk_user_id: str) -> dict:
@@ -100,13 +80,13 @@ async def create_session(
     )
 
     doc = db.sessions.find_one({"_id": ObjectId(session_id)})
-    return _session_to_response(doc)
+    return session_to_response(doc)
 
 
 @router.get("", response_model=SessionListResponse)
 def list_sessions(clerk_user_id: str = Depends(require_auth)):
     docs = list(db.sessions.find({"clerk_user_id": clerk_user_id}).sort("created_at", -1))
-    sessions = [_session_to_response(d) for d in docs]
+    sessions = [session_to_response(d) for d in docs]
     return SessionListResponse(sessions=sessions, total=len(sessions))
 
 
@@ -116,7 +96,7 @@ def get_session(
     clerk_user_id: str = Depends(require_auth),
 ):
     doc = _get_owned_session(session_id, clerk_user_id)
-    return _session_to_response(doc)
+    return session_to_response(doc)
 
 
 @router.get("/{session_id}/questions", response_model=list[QuestionResponse])
@@ -231,7 +211,7 @@ async def patch_session(
     if session_completed:
         background_tasks.add_task(generate_feedback, session_id)
 
-    return _session_to_response(doc)
+    return session_to_response(doc)
 
 
 async def _sync_transcript_background(
