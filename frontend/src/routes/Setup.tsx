@@ -126,7 +126,7 @@ export function Setup() {
     company: '',
     difficulty: '',
     technicalPersona: '',
-    durationMinutes: 45,
+    durationMinutes: undefined,
   })
 
   const total = totalSteps(state.interviewType)
@@ -236,7 +236,7 @@ export function Setup() {
           <div>
             <AnimatePresence mode="wait">
               <motion.div
-                key={`${step}-${state.interviewType}`}
+                key={step}
                 variants={slideVariants}
                 initial="enter"
                 animate="center"
