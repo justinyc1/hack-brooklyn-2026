@@ -11,7 +11,10 @@ import type { ApiSession, ApiAgentUrl } from '@/lib/apiTypes'
 function useCountdown(totalSecs: number) {
   const [seconds, setSeconds] = useState(totalSecs)
   useEffect(() => {
-    if (totalSecs > 0) setSeconds(totalSecs)
+    if (totalSecs > 0) {
+      const id = setTimeout(() => setSeconds(totalSecs), 0)
+      return () => clearTimeout(id)
+    }
   }, [totalSecs])
   useEffect(() => {
     if (seconds <= 0) return
@@ -186,7 +189,7 @@ export function BehavioralInterview() {
     )
   }
 
-  const persona = session?.interviewer_tone ?? 'neutral'
+  const persona = session?.behavioral_persona ?? 'supportive'
   const personaInitial = persona.charAt(0).toUpperCase()
 
   return (
@@ -268,7 +271,7 @@ export function BehavioralInterview() {
                   onClick={() => {
                     const newMuted = !muted
                     setMuted(newMuted)
-                    try { convRef.current?.setMicMuted(newMuted) } catch {}
+                    try { convRef.current?.setMicMuted(newMuted) } catch (e) { console.error('Error setting mic muted', e) }
                   }}
                   className={cn(
                     'rounded-sm border px-4 py-2 font-mono text-xs uppercase tracking-widest transition-all duration-200',
