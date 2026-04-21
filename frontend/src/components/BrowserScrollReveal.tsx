@@ -1,41 +1,6 @@
 import { useRef } from 'react'
 import { motion, useScroll, useTransform, useSpring } from 'framer-motion'
 
-function ProblemPanel() {
-  return (
-    <div className="border-r border-ink-700/40 bg-ink-950 p-5 overflow-hidden">
-      <div className="flex items-center gap-2 mb-4">
-        <span className="font-mono text-xs font-semibold text-paper">Two Sum</span>
-        <span className="font-mono text-[9px] text-moss border border-moss/30 bg-moss/10 px-1.5 py-0.5 rounded-sm">
-          Easy
-        </span>
-      </div>
-      <div className="space-y-2 mb-5">
-        {[82, 64, 91, 73, 55, 80, 68].map((w, i) => (
-          <div key={i} className="h-1.5 rounded-sm bg-ink-700/70" style={{ width: `${w}%` }} />
-        ))}
-      </div>
-      <div className="border-l-2 border-ember/25 bg-ink-800/50 rounded-sm px-3 py-2.5 mb-4">
-        <p className="font-mono text-[9px] text-paper-faint mb-2 uppercase tracking-widest">Example 1</p>
-        {[72, 52].map((w, i) => (
-          <div key={i} className="h-1.5 rounded-sm bg-ember/20 mb-1.5" style={{ width: `${w}%` }} />
-        ))}
-      </div>
-      <div className="space-y-2">
-        {[78, 58, 88].map((w, i) => (
-          <div key={i} className="h-1.5 rounded-sm bg-ink-700/60" style={{ width: `${w}%` }} />
-        ))}
-      </div>
-      <div className="mt-6 pt-4 border-t border-ink-700/40">
-        <p className="font-mono text-[9px] text-paper-faint uppercase tracking-widest mb-2">Constraints</p>
-        {[65, 45, 70].map((w, i) => (
-          <div key={i} className="h-1.5 rounded-sm bg-ink-700/50 mb-1.5" style={{ width: `${w}%` }} />
-        ))}
-      </div>
-    </div>
-  )
-}
-
 function EditorPanel() {
   const lines = [
     { color: 'bg-purple-400/35', w: '85%' },
@@ -57,7 +22,7 @@ function EditorPanel() {
     <div className="border-r border-ink-700/40 bg-[#060608]">
       <div className="flex items-center gap-1 px-3 py-2.5 border-b border-ink-700/40 bg-ink-900/40">
         <span className="font-mono text-[10px] text-ember/65 border-b border-ember/35 px-2 pb-px">solution.py</span>
-        <span className="font-mono text-[10px] text-paper-faint/35 px-2">tests.py</span>
+        <span className="font-mono text-[10px] text-paper-faint/35 px-2">✎ Whiteboard</span>
         <span className="ml-auto font-mono text-[10px] text-paper-faint/35">Python 3</span>
       </div>
       <div className="p-4">
@@ -167,7 +132,7 @@ export function BrowserScrollReveal() {
       </motion.div>
 
       {/* Browser + labels */}
-      <div className="relative mx-auto max-w-5xl px-16">
+      <div className="relative mx-auto max-w-5xl px-4 lg:px-16">
 
         {/* Label — left */}
         <motion.div
@@ -241,9 +206,8 @@ export function BrowserScrollReveal() {
               <span className="font-mono text-[10px] text-ember/55 shrink-0">● LIVE</span>
             </div>
 
-            {/* 3-column body */}
-            <div className="grid grid-cols-[200px_1fr_200px] min-h-[340px]">
-              <ProblemPanel />
+            {/* 2-column body: editor + chat */}
+            <div className="grid grid-cols-[1fr_120px] lg:grid-cols-[1fr_200px] min-h-[240px] lg:min-h-[340px]">
               <EditorPanel />
               <ChatPanel />
             </div>

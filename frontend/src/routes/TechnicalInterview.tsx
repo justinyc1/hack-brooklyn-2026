@@ -486,7 +486,8 @@ export function TechnicalInterview() {
   const [submitting, setSubmitting] = useState(false);
 
 
-  const [whiteboardMode, setWhiteboardMode] = useState(false);
+  const [whiteboardMode, setWhiteboardMode] = useState(false)
+  const [mobileTab, setMobileTab] = useState<'problem' | 'editor' | 'interviewer'>('editor');
 
   const [agentUrl, setAgentUrl] = useState<string | null>(null);
   const [started, setStarted] = useState(false);
@@ -761,7 +762,7 @@ export function TechnicalInterview() {
           <span className="font-display text-sm font-semibold text-paper">
             Intervue
           </span>
-          <span className="font-mono text-xs text-paper-faint ml-2">
+          <span className="hidden sm:inline font-mono text-xs text-paper-faint ml-2">
             Technical{session?.company ? ` · ${session.company}` : ""}
           </span>
         </div>
@@ -777,7 +778,11 @@ export function TechnicalInterview() {
       {/* Three-pane layout */}
       <div className="flex flex-1 overflow-hidden">
         {/* Pane 1: Problem */}
-        <div className="flex w-[320px] shrink-0 flex-col overflow-y-auto border-r border-ink-700/60 bg-ink-900 p-5">
+        <div className={cn(
+          "flex-col overflow-y-auto border-r border-ink-700/60 bg-ink-900 p-5",
+          mobileTab === 'problem' ? "flex flex-1" : "hidden",
+          "lg:flex lg:flex-none lg:w-[320px]"
+        )}>
           {!problem ? (
             <p className="font-mono text-xs text-paper-faint animate-pulse">
               Loading problem...
@@ -853,7 +858,11 @@ export function TechnicalInterview() {
 
 
         {/* Pane 2: Editor / Whiteboard */}
-        <div className="flex flex-1 flex-col overflow-hidden">
+        <div className={cn(
+          "flex-col overflow-hidden",
+          mobileTab === 'editor' ? "flex flex-1" : "hidden",
+          "lg:flex lg:flex-1"
+        )}>
           <div className="flex items-center gap-2 border-b border-ink-700/60 bg-ink-900 px-3 py-2">
             <select
               value={language}
@@ -995,7 +1004,11 @@ export function TechnicalInterview() {
 
 
         {/* Pane 3: Interviewer + Transcript */}
-        <div className="flex w-[280px] shrink-0 flex-col border-l border-ink-700/60 bg-ink-900">
+        <div className={cn(
+          "flex-col border-l border-ink-700/60 bg-ink-900",
+          mobileTab === 'interviewer' ? "flex flex-1" : "hidden",
+          "lg:flex lg:w-[280px] lg:shrink-0 lg:flex-none"
+        )}>
           <div className="border-b border-ink-700/60 p-4">
             <div className="flex items-center gap-3 mb-3">
               <div className="relative flex h-9 w-9 items-center justify-center rounded-full border border-ink-700/80 bg-ink-800 font-display text-sm font-semibold text-paper">
@@ -1117,6 +1130,27 @@ export function TechnicalInterview() {
             />
           </div>
         </div>
+      </div>
+
+      {/* Mobile tab bar */}
+      <div className="flex shrink-0 border-t border-ink-700/60 bg-ink-900 lg:hidden">
+        {([
+          { id: 'problem', label: 'Problem', icon: '◧' },
+          { id: 'editor', label: 'Code', icon: '⌨' },
+          { id: 'interviewer', label: 'Voice', icon: '⊙' },
+        ] as const).map(({ id, label, icon }) => (
+          <button
+            key={id}
+            onClick={() => setMobileTab(id)}
+            className={cn(
+              "flex flex-1 flex-col items-center gap-0.5 py-2.5 font-mono text-[10px] uppercase tracking-widest transition-colors",
+              mobileTab === id ? "text-ember border-t border-ember" : "text-paper-faint border-t border-transparent hover:text-paper-dim",
+            )}
+          >
+            <span className="text-sm">{icon}</span>
+            {label}
+          </button>
+        ))}
       </div>
     </div>
   );
