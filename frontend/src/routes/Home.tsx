@@ -23,18 +23,18 @@ const sampleTranscript = [
 const features = [
   {
     num: '01',
-    title: 'Live voice interviewer',
-    body: 'A real-time AI interviewer that speaks, interrupts, probes, and adapts based on your answers. Not a chatbot.',
+    title: 'Any interview, any role',
+    body: 'Technical coding rounds with a live editor and test runner, or behavioral STAR sessions with adaptive follow-ups. Switch personas, difficulty, and duration to match any loop.',
   },
   {
     num: '02',
-    title: 'Real code, real tests',
-    body: 'Full LeetCode-style editor with multi-language support, test execution, and complexity analysis.',
+    title: 'A real interviewer, not a quiz',
+    body: 'The AI speaks, listens, interrupts, and pushes back — just like a human would. It reads your code silently, probes weak answers, and holds the pressure until you crack or nail it.',
   },
   {
     num: '03',
     title: 'Evidence-based feedback',
-    body: 'Every score is anchored to a specific transcript moment. You see exactly where you lost or earned points.',
+    body: 'Every score is tied to a specific moment in your transcript. You see exactly where you lost points — and what a stronger answer would have looked like.',
   },
 ]
 
@@ -75,7 +75,7 @@ export function Home() {
             </motion.h1>
 
             <motion.p variants={fadeUp} className="mt-8 max-w-md text-base leading-relaxed text-paper-dim">
-            Realistic SWE mock interviews with a live AI Interviewer. Practice coding, behavioral, or both. Adaptive follow-up questions, real pressure, clear evidence-based feedback.
+            Realistic technical coding rounds, behavioral STAR sessions, or both with a live AI Interviewer. Practice coding and behavioral interviews. Adaptive follow-up questions, real pressure, clear evidence-based feedback.
             </motion.p>
 
             <motion.div variants={fadeUp} className="mt-10 flex flex-wrap items-center gap-4">
@@ -95,7 +95,7 @@ export function Home() {
             </motion.div>
 
             <motion.div variants={fadeUp} className="mt-12 flex items-center gap-6">
-              {['Voice AI', 'Monaco editor', 'Company-specific'].map((tag) => (
+              {['Voice AI', 'Technical & Behavioral', 'Company-tailored'].map((tag) => (
                 <div key={tag} className="flex items-center gap-2">
                   <span className="h-1 w-1 rounded-full bg-ember" />
                   <span className="font-mono text-xs text-paper-faint">{tag}</span>
@@ -218,7 +218,7 @@ export function Home() {
           <h2 className="mb-4 font-sans text-4xl font-extrabold text-paper md:text-5xl">
             Ready to run a mock interview?
           </h2>
-          <p className="mb-8 text-paper-dim">Set up your session in 60 seconds. No account required.</p>
+          <p className="mb-8 text-paper-dim">Set up your session in 60 seconds.</p>
           <button
             onClick={() => navigate('/setup')}
             className="group inline-flex items-center gap-3 rounded-sm bg-ember px-8 py-4 font-mono text-sm font-medium uppercase tracking-widest text-ink-950 transition-all duration-200 hover:bg-ember-soft active:scale-[0.97]"
