@@ -22,7 +22,7 @@ interface SetupState {
   difficulty: Difficulty | ''
   technicalPersona: InterviewerPersona | ''
   // Shared
-  durationMinutes: number
+  durationMinutes: number | undefined
 }
 
 const ROLES = [
