@@ -3,9 +3,10 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '@clerk/clerk-react'
 import { motion } from 'framer-motion'
 import { toast } from 'sonner'
+import Editor from '@monaco-editor/react'
 import { cn } from '@/lib/cn'
 import { apiFetch } from '@/lib/api'
-import type { ApiFeedbackReport, ApiSession } from '@/lib/apiTypes'
+import type { ApiFeedbackReport, ApiSession, ApiCodeSnapshot } from '@/lib/apiTypes'
 
 const stagger = { hidden: {}, show: { transition: { staggerChildren: 0.08 } } }
 const fadeUp = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" as const } } }
@@ -127,6 +128,67 @@ function QuestionAccordion({ qf, idx }: { qf: QuestionFeedbackUI; idx: number })
   )
 }
 
+function CodeTimeline({ snapshots, idx, onIdxChange }: {
+  snapshots: ApiCodeSnapshot[]
+  idx: number
+  onIdxChange: (i: number) => void
+}) {
+  const snap = snapshots[idx]
+  if (!snap) return null
+
+  const ts = new Date(snap.timestamp)
+  const timeLabel = ts.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+
+  return (
+    <div className="rounded-md border border-ink-700/60 bg-ink-900 overflow-hidden">
+      <div className="flex items-center justify-between border-b border-ink-700/60 px-5 py-3">
+        <div>
+          <p className="font-mono text-[10px] uppercase tracking-widest text-paper-faint">Code Timeline</p>
+          <p className="mt-0.5 font-mono text-xs text-paper-dim">
+            Snapshot {idx + 1} of {snapshots.length} · {snap.language} · {timeLabel}
+          </p>
+        </div>
+        <span className="font-mono text-[10px] text-paper-faint/60">{snapshots.length} snapshots</span>
+      </div>
+
+      <div className="px-5 py-3 border-b border-ink-700/60">
+        <input
+          type="range"
+          min={0}
+          max={snapshots.length - 1}
+          value={idx}
+          onChange={(e) => onIdxChange(Number(e.target.value))}
+          className="w-full accent-ember cursor-pointer"
+        />
+        <div className="mt-1 flex justify-between font-mono text-[9px] text-paper-faint/50">
+          <span>Start</span>
+          <span>End</span>
+        </div>
+      </div>
+
+      <div style={{ height: 320 }}>
+        <Editor
+          height="100%"
+          language={snap.language === 'cpp' ? 'cpp' : snap.language}
+          value={snap.code}
+          theme="vs-dark"
+          options={{
+            readOnly: true,
+            fontSize: 12,
+            fontFamily: '"JetBrains Mono", monospace',
+            lineHeight: 1.6,
+            padding: { top: 12, bottom: 12 },
+            minimap: { enabled: false },
+            scrollBeyondLastLine: false,
+            renderLineHighlight: 'none',
+            cursorWidth: 0,
+          }}
+        />
+      </div>
+    </div>
+  )
+}
+
 export function Feedback() {
   const { id: sessionId } = useParams<{ id: string }>()
   const navigate = useNavigate()
@@ -135,6 +197,9 @@ export function Feedback() {
   const [session, setSession] = useState<ApiSession | null>(null)
   const [loading, setLoading] = useState(true)
   const [pollCount, setPollCount] = useState(0)
+  const [snapshots, setSnapshots] = useState<ApiCodeSnapshot[]>([])
+  const [snapshotIdx, setSnapshotIdx] = useState(0)
+  const [loadingSnapshots, setLoadingSnapshots] = useState(false)
 
   useEffect(() => {
     if (!sessionId) return
@@ -148,10 +213,26 @@ export function Feedback() {
           apiFetch<ApiFeedbackReport>(`/api/feedback/${sessionId}`, token),
           apiFetch<ApiSession>(`/api/interviews/${sessionId}`, token).catch(() => null)
         ])
-        if (!cancelled) { 
+        if (!cancelled) {
           setReport(feedbackData)
           setSession(sessionData)
-          setLoading(false) 
+          setLoading(false)
+
+          if (sessionData?.mode === 'technical') {
+            setLoadingSnapshots(true)
+            try {
+              const snaps = await apiFetch<ApiCodeSnapshot[]>(
+                `/api/interviews/${sessionId}/code/snapshots`,
+                token
+              )
+              setSnapshots(snaps ?? [])
+              setSnapshotIdx(Math.max(0, (snaps?.length ?? 1) - 1))
+            } catch {
+              // snapshots optional
+            } finally {
+              setLoadingSnapshots(false)
+            }
+          }
         }
       } catch {
         // 404 means not ready yet — retry is scheduled by the timeout effect
@@ -269,6 +350,17 @@ export function Feedback() {
                 </div>
               ))}
             </div>
+          </motion.div>
+        )}
+
+        {snapshots.length > 0 && (
+          <motion.div variants={fadeUp} className="mb-8">
+            <p className="mb-4 font-mono text-xs uppercase tracking-widest text-paper-faint">Code Evolution</p>
+            {loadingSnapshots ? (
+              <p className="font-mono text-xs text-paper-faint/60 animate-pulse">Loading snapshots...</p>
+            ) : (
+              <CodeTimeline snapshots={snapshots} idx={snapshotIdx} onIdxChange={setSnapshotIdx} />
+            )}
           </motion.div>
         )}
 
