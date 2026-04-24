@@ -54,6 +54,41 @@ def _parse_questions_json(raw: str, expected: int) -> list[str]:
     return [str(q) for q in questions[:expected]]
 
 
+async def plan_resume_questions(session_id: str, resume_text: str, duration_minutes: int) -> list[Question]:
+    """Generate N STAR behavioral questions based on a user's resume via LLM."""
+    n = _question_count(duration_minutes)
+    prompt = f"""\
+Generate exactly {n} distinct behavioral interview questions for a software engineering candidate based on their resume.
+
+Candidate's Resume:
+{resume_text}
+
+Requirements:
+- Each question must be in STAR style — asking the candidate to describe a specific past experience.
+- The questions MUST reference specific projects, roles, or technologies mentioned in the candidate's resume.
+- Do NOT use overused openers like "Tell me about yourself" or "What is your greatest weakness".
+- Make questions specific, probing, and varied in length and complexity.
+- Each question should be a single sentence ending with a period or question mark.
+
+Return ONLY valid JSON with this exact structure (no markdown code fences, no explanation):
+{{"questions": ["question 1", "question 2", ...]}}
+
+Generate {n} questions now."""
+
+    raw = await chat_complete(prompt, temperature=0.7)
+    question_texts = _parse_questions_json(raw, n)
+    return [
+        Question(
+            session_id=session_id,
+            order=i,
+            type=QuestionType.behavioral,
+            prompt=text,
+            follow_up_tree=[],
+        )
+        for i, text in enumerate(question_texts)
+    ]
+
+
 async def plan_behavioral_questions(session_id: str, duration_minutes: int) -> list[Question]:
     """Generate N STAR behavioral questions via LLM. Raises on failure."""
     n = _question_count(duration_minutes)
