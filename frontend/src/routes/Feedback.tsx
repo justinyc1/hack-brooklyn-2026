@@ -5,7 +5,7 @@ import { motion } from 'framer-motion'
 import { toast } from 'sonner'
 import { cn } from '@/lib/cn'
 import { apiFetch } from '@/lib/api'
-import type { ApiFeedbackReport } from '@/lib/apiTypes'
+import type { ApiFeedbackReport, ApiSession } from '@/lib/apiTypes'
 
 const stagger = { hidden: {}, show: { transition: { staggerChildren: 0.08 } } }
 const fadeUp = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" as const } } }
@@ -132,6 +132,7 @@ export function Feedback() {
   const navigate = useNavigate()
   const { getToken } = useAuth()
   const [report, setReport] = useState<ApiFeedbackReport | null>(null)
+  const [session, setSession] = useState<ApiSession | null>(null)
   const [loading, setLoading] = useState(true)
   const [pollCount, setPollCount] = useState(0)
 
@@ -143,8 +144,15 @@ export function Feedback() {
       try {
         const token = await getToken()
         if (!token || cancelled) return
-        const data = await apiFetch<ApiFeedbackReport>(`/api/feedback/${sessionId}`, token)
-        if (!cancelled) { setReport(data); setLoading(false) }
+        const [feedbackData, sessionData] = await Promise.all([
+          apiFetch<ApiFeedbackReport>(`/api/feedback/${sessionId}`, token),
+          apiFetch<ApiSession>(`/api/interviews/${sessionId}`, token).catch(() => null)
+        ])
+        if (!cancelled) { 
+          setReport(feedbackData)
+          setSession(sessionData)
+          setLoading(false) 
+        }
       } catch {
         // 404 means not ready yet — retry is scheduled by the timeout effect
       }
@@ -265,12 +273,19 @@ export function Feedback() {
         )}
 
         <motion.div variants={fadeUp} className="flex flex-wrap items-center gap-4">
-          <button
-            onClick={() => toast.info('Audio replay coming soon')}
-            className="flex items-center gap-2 rounded-sm border border-ink-700/60 px-4 py-2 font-mono text-xs text-paper-faint hover:border-paper-faint/30 hover:text-paper-dim transition-all duration-200"
-          >
-            ▶ Replay session audio
-          </button>
+          {session?.audio_s3_url ? (
+            <div className="flex flex-col gap-1">
+              <span className="font-mono text-[10px] uppercase tracking-widest text-paper-faint">Session Audio</span>
+              <audio controls src={session.audio_s3_url} className="h-10 rounded-sm" />
+            </div>
+          ) : (
+            <button
+              onClick={() => toast.info('Audio replay not available for this session')}
+              className="flex items-center gap-2 rounded-sm border border-ink-700/60 px-4 py-2 font-mono text-xs text-paper-faint hover:border-paper-faint/30 hover:text-paper-dim transition-all duration-200"
+            >
+              ▶ Replay session audio
+            </button>
+          )}
           <button onClick={() => navigate('/setup')} className="flex items-center gap-2 rounded-sm bg-ember px-5 py-2 font-mono text-xs text-ink-950 hover:bg-ember-soft transition-all duration-200">
             Practice again →
           </button>

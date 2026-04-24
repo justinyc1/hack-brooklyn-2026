@@ -18,6 +18,7 @@ export interface ApiSession {
   question_ids: string[]
   elevenlabs_agent_id: string | null
   elevenlabs_conversation_id: string | null
+  audio_s3_url: string | null
   created_at: string
   started_at: string | null
   ended_at: string | null

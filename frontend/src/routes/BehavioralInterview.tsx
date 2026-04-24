@@ -5,7 +5,7 @@ import { Conversation } from '@11labs/client'
 import type { Status } from '@11labs/client'
 import { motion } from 'framer-motion'
 import { cn } from '@/lib/cn'
-import { apiFetch } from '@/lib/api'
+import { apiFetch, wsUrl } from '@/lib/api'
 import type { ApiSession, ApiAgentUrl } from '@/lib/apiTypes'
 
 function useCountdown(totalSecs: number) {
@@ -79,6 +79,8 @@ export function BehavioralInterview() {
   const [ending, setEnding] = useState(false)
 
   const convRef = useRef<Awaited<ReturnType<typeof Conversation.startSession>> | null>(null)
+  const audioWsRef = useRef<WebSocket | null>(null)
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
 
   const totalSecs = (session?.duration_minutes ?? 45) * 60
   const timeStr = useCountdown(totalSecs)
@@ -106,6 +108,26 @@ export function BehavioralInterview() {
             method: 'PATCH',
             body: JSON.stringify({ status: 'active' }),
           })
+        }
+
+        const wsProtocolUrl = wsUrl(`/ws/interviews/${sessionId}/audio?token=${token}`)
+        const audioWs = new WebSocket(wsProtocolUrl)
+        audioWsRef.current = audioWs
+
+        audioWs.onopen = async () => {
+          try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+            const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' })
+            mediaRecorderRef.current = mediaRecorder
+            mediaRecorder.ondataavailable = (e) => {
+              if (e.data.size > 0 && audioWs.readyState === WebSocket.OPEN) {
+                audioWs.send(e.data)
+              }
+            }
+            mediaRecorder.start(1000)
+          } catch (err) {
+            console.error("Microphone access denied or error:", err)
+          }
         }
 
         const conversation = await Conversation.startSession({
@@ -156,6 +178,9 @@ export function BehavioralInterview() {
     start()
     return () => {
       cancelled = true
+      mediaRecorderRef.current?.stop()
+      mediaRecorderRef.current?.stream.getTracks().forEach(t => t.stop())
+      audioWsRef.current?.close()
       convRef.current?.endSession().catch(() => {})
     }
   }, [sessionId, getToken])
@@ -164,6 +189,10 @@ export function BehavioralInterview() {
     if (ending) return
     setEnding(true)
     try {
+      mediaRecorderRef.current?.stop()
+      mediaRecorderRef.current?.stream.getTracks().forEach(t => t.stop())
+      audioWsRef.current?.close()
+
       await convRef.current?.endSession()
       const token = await getToken()
       if (token) {
