@@ -78,3 +78,91 @@ def get_s3_key_for_artifact(session_id: str, artifact_type: str, filename: str) 
     artifact_type: 'audio', 'transcripts', 'code_submissions', 'reports', 'resumes'
     """
     return f"sessions/{session_id}/{artifact_type}/{filename}"
+
+
+class S3MultipartAudioStreamer:
+    """Streams binary audio chunks to S3 using multipart upload."""
+    
+    # S3 requires parts to be at least 5MB (except the last part)
+    MIN_PART_SIZE = 5 * 1024 * 1024
+
+    def __init__(self, session_id: str, content_type: str = "audio/webm"):
+        self.session_id = session_id
+        self.object_key = get_s3_key_for_artifact(session_id, "audio", f"recording_{session_id}.webm")
+        self.content_type = content_type
+        
+        self.upload_id = None
+        self.parts = []
+        self.part_number = 1
+        self.buffer = bytearray()
+        
+        try:
+            response = s3_client.create_multipart_upload(
+                Bucket=BUCKET_NAME,
+                Key=self.object_key,
+                ContentType=self.content_type
+            )
+            self.upload_id = response['UploadId']
+            logger.info(f"Started multipart upload for session {self.session_id}, UploadId: {self.upload_id}")
+        except ClientError as e:
+            logger.error(f"Failed to start multipart upload: {e}")
+            raise e
+
+    def add_chunk(self, chunk: bytes):
+        if not self.upload_id:
+            return
+            
+        self.buffer.extend(chunk)
+        if len(self.buffer) >= self.MIN_PART_SIZE:
+            self._upload_current_buffer()
+
+    def _upload_current_buffer(self):
+        if not self.buffer:
+            return
+            
+        try:
+            part_data = bytes(self.buffer)
+            response = s3_client.upload_part(
+                Bucket=BUCKET_NAME,
+                Key=self.object_key,
+                PartNumber=self.part_number,
+                UploadId=self.upload_id,
+                Body=part_data
+            )
+            self.parts.append({
+                'PartNumber': self.part_number,
+                'ETag': response['ETag']
+            })
+            logger.info(f"Uploaded part {self.part_number} for session {self.session_id}")
+            self.part_number += 1
+            self.buffer.clear()
+        except ClientError as e:
+            logger.error(f"Failed to upload part {self.part_number}: {e}")
+
+    def close(self) -> str | None:
+        """Completes the upload and returns the object key/URL, or None if failed."""
+        if not self.upload_id:
+            return None
+            
+        if self.buffer:
+            self._upload_current_buffer()
+            
+        try:
+            s3_client.complete_multipart_upload(
+                Bucket=BUCKET_NAME,
+                Key=self.object_key,
+                UploadId=self.upload_id,
+                MultipartUpload={'Parts': self.parts}
+            )
+            logger.info(f"Completed multipart upload for session {self.session_id}")
+            return f"s3://{BUCKET_NAME}/{self.object_key}"
+        except ClientError as e:
+            logger.error(f"Failed to complete multipart upload: {e}")
+            # Try to abort to avoid dangling parts
+            s3_client.abort_multipart_upload(
+                Bucket=BUCKET_NAME,
+                Key=self.object_key,
+                UploadId=self.upload_id
+            )
+            return None
+

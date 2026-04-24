@@ -51,6 +51,7 @@ class InterviewSession(MongoBase):
     company_snapshot_id: str | None = None
     resume_text: str | None = None
     resume_s3_url: str | None = None
+    audio_s3_url: str | None = None
     question_ids: list[str] = Field(default_factory=list)
     elevenlabs_agent_id: str | None = None
     elevenlabs_conversation_id: str | None = None

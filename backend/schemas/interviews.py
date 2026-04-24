@@ -31,6 +31,7 @@ class PatchSessionRequest(BaseModel):
     started_at: datetime | None = None
     ended_at: datetime | None = None
     elevenlabs_conversation_id: str | None = None
+    audio_s3_url: str | None = None
 
 
 class SessionResponse(BaseModel):
@@ -45,6 +46,7 @@ class SessionResponse(BaseModel):
     behavioral_persona: BehavioralPersona | None = None
     resume_text: str | None = None
     resume_s3_url: str | None = None
+    audio_s3_url: str | None = None
     status: SessionStatus
     question_ids: list[str]
     elevenlabs_agent_id: str | None = None
