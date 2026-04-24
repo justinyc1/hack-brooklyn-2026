@@ -16,10 +16,12 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/interviews/behavioral", tags=["behavioral"])
 
 
+from auth.rate_limit import RateLimiter
+
 @router.post("", response_model=SessionResponse, status_code=status.HTTP_201_CREATED)
 async def create_behavioral_session(
     body: CreateBehavioralSessionRequest,
-    clerk_user_id: str = Depends(require_auth),
+    clerk_user_id: str = Depends(RateLimiter(5, 60, "create_behavioral_session")),
 ):
     session = InterviewSession(
         clerk_user_id=clerk_user_id,

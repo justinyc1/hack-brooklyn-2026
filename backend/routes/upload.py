@@ -4,7 +4,7 @@ import pypdf
 import uuid
 import os
 
-from auth.clerk import require_auth
+from auth.rate_limit import RateLimiter
 from services.s3 import upload_file_to_s3
 
 logger = logging.getLogger(__name__)
@@ -14,10 +14,13 @@ router = APIRouter(prefix="/api/upload", tags=["upload"])
 @router.post("/resume")
 async def upload_resume(
     file: UploadFile = File(...),
-    clerk_user_id: str = Depends(require_auth)
+    clerk_user_id: str = Depends(RateLimiter(5, 60, "upload_resume"))
 ):
     if not file.filename.lower().endswith(".pdf"):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Only PDF files are supported.")
+        
+    if file.size and file.size > 5 * 1024 * 1024:
+        raise HTTPException(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail="File size exceeds 5MB limit.")
     
     # Generate unique object name for S3
     file_id = str(uuid.uuid4())
@@ -25,6 +28,9 @@ async def upload_resume(
     
     # Read file content for pypdf
     file_content = await file.read()
+    
+    if len(file_content) > 5 * 1024 * 1024:
+        raise HTTPException(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail="File size exceeds 5MB limit.")
     
     try:
         # Seek to beginning to parse

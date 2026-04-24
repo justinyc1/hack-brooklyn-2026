@@ -36,15 +36,14 @@ def _get_owned_session(session_id: str, clerk_user_id: str) -> dict:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
     return doc
 
+# routes
 
-# ---------------------------------------------------------------------------
-# Routes
-# ---------------------------------------------------------------------------
+from auth.rate_limit import RateLimiter
 
 @router.post("", response_model=SessionResponse, status_code=status.HTTP_201_CREATED)
 async def create_session(
     body: CreateSessionRequest,
-    clerk_user_id: str = Depends(require_auth),
+    clerk_user_id: str = Depends(RateLimiter(5, 60, "create_session")),
 ):
     session = InterviewSession(
         clerk_user_id=clerk_user_id,

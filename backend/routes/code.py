@@ -72,11 +72,13 @@ def _build_response(raw_results: list[dict], submission_id: str | None) -> CodeR
     )
 
 
+from auth.rate_limit import RateLimiter
+
 @router.post("/run", response_model=CodeRunResponse)
 async def run_code(
     session_id: str,
     body: CodeRunRequest,
-    clerk_user_id: str = Depends(require_auth),
+    clerk_user_id: str = Depends(RateLimiter(15, 60, "code_run")),
 ):
     _, problem = _validate_request(session_id, body, clerk_user_id)
 
@@ -94,7 +96,7 @@ async def run_code(
 async def submit_code(
     session_id: str,
     body: CodeRunRequest,
-    clerk_user_id: str = Depends(require_auth),
+    clerk_user_id: str = Depends(RateLimiter(10, 60, "code_submit")),
 ):
     _, problem = _validate_request(session_id, body, clerk_user_id)
 
