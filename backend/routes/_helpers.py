@@ -10,10 +10,10 @@ def session_to_response(doc: dict) -> SessionResponse:
     audio_url = session.audio_s3_url
     if audio_url and audio_url.startswith("s3://"):
         try:
-            bucket, key = audio_url.replace("s3://", "").split("/", 1)
-            audio_url = generate_presigned_url(key) or audio_url
+            _, key = audio_url.replace("s3://", "").split("/", 1)
+            audio_url = generate_presigned_url(key) or None
         except Exception:
-            pass
+            audio_url = None
 
     return SessionResponse(
         id=session.id,
