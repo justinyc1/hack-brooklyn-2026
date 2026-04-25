@@ -12,6 +12,7 @@ import { Feedback } from '@/routes/Feedback'
 import { History } from '@/routes/History'
 import { Account } from '@/routes/Account'
 import { SampleFeedback } from '@/routes/SampleFeedback'
+import { Problems } from '@/routes/Problems'
 import { NotFound } from '@/routes/NotFound'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -34,6 +35,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/setup" element={<ProtectedRoute><Setup /></ProtectedRoute>} />
+          <Route path="/problems" element={<ProtectedRoute><Problems /></ProtectedRoute>} />
           <Route path="/interview/:id/technical" element={<ProtectedRoute><TechnicalInterview /></ProtectedRoute>} />
           <Route path="/interview/:id/behavioral" element={<ProtectedRoute><BehavioralInterview /></ProtectedRoute>} />
           <Route path="/interview/:id/resume" element={<ProtectedRoute><ResumeInterview /></ProtectedRoute>} />

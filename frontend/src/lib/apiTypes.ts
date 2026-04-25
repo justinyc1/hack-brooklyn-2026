@@ -122,3 +122,31 @@ export interface ApiReportShare {
   url: string
   expires_in: number
 }
+
+export interface ApiProblemListItem {
+  slug: string
+  title: string
+  difficulty: 'easy' | 'medium' | 'hard'
+  source: 'local' | 'leetcode'
+  has_test_cases: boolean
+  topic_tags: string[]
+}
+
+export interface ApiProblemListResponse {
+  problems: ApiProblemListItem[]
+  total: number
+}
+
+export interface ApiProblemDetail {
+  slug: string
+  title: string
+  difficulty: 'easy' | 'medium' | 'hard'
+  source: 'local' | 'leetcode'
+  has_test_cases: boolean
+  description: string
+  examples: { input: string; output: string; explanation?: string }[]
+  constraints: string[]
+  topic_tags: string[]
+  starter_code: Record<string, string> | null
+  hints: string[]
+}

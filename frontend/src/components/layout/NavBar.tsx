@@ -31,6 +31,7 @@ export function NavBar() {
         <div className="hidden items-center gap-8 md:flex">
           {[
             { to: '/history', label: 'Sessions' },
+            { to: '/problems', label: 'Problems' },
             { to: '/setup', label: 'Practice' },
           ].map(({ to, label }) => (
             <Link
