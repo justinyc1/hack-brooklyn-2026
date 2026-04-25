@@ -63,7 +63,7 @@ function Waveform({ speaking }: { speaking: boolean }) {
 
 interface TranscriptLine { speaker: 'ai' | 'user'; text: string }
 
-export function BehavioralInterview() {
+export function ResumeInterview() {
   const { id: sessionId } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { getToken } = useAuth()
@@ -148,6 +148,7 @@ export function BehavioralInterview() {
             inputStream: MediaStream
           }
         }
+        
         const voiceConv = conversation as VoiceConversationWithAudio
         if (voiceConv.output && voiceConv.input) {
           try {
@@ -213,8 +214,6 @@ export function BehavioralInterview() {
     if (ending) return
     setEnding(true)
     try {
-      mediaRecorderRef.current?.stop()
-      audioWsRef.current?.close()
       await convRef.current?.endSession()
       const token = await getToken()
       if (token) {

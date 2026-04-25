@@ -42,3 +42,8 @@ class FeedbackReportResponse(BaseModel):
     top_weaknesses: list[str] = Field(default_factory=list)
     targeted_drills: list[str] = Field(default_factory=list)
     generated_at: datetime
+
+
+class ReportShareResponse(BaseModel):
+    url: str
+    expires_in: int

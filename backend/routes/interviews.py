@@ -20,6 +20,7 @@ from schemas.interviews import (
 )
 from services.code_runner import load_problem
 from services.elevenlabs import create_interview_agent, get_signed_url, sync_transcript
+from services.tts_cache import prewarm as tts_prewarm
 from services.feedback import generate_feedback
 from services.question_planner import plan_questions
 
@@ -36,15 +37,15 @@ def _get_owned_session(session_id: str, clerk_user_id: str) -> dict:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
     return doc
 
+# routes
 
-# ---------------------------------------------------------------------------
-# Routes
-# ---------------------------------------------------------------------------
+from auth.rate_limit import RateLimiter
 
 @router.post("", response_model=SessionResponse, status_code=status.HTTP_201_CREATED)
 async def create_session(
     body: CreateSessionRequest,
-    clerk_user_id: str = Depends(require_auth),
+    background_tasks: BackgroundTasks,
+    clerk_user_id: str = Depends(RateLimiter(5, 60, "create_session")),
 ):
     session = InterviewSession(
         clerk_user_id=clerk_user_id,
@@ -54,13 +55,23 @@ async def create_session(
         difficulty=body.difficulty,
         duration_minutes=body.duration_minutes,
         interviewer_tone=body.interviewer_tone,
+        behavioral_persona=body.behavioral_persona,
+        resume_text=body.resume_text,
+        resume_s3_url=body.resume_s3_url,
     )
 
     result = db.sessions.insert_one(session.to_mongo())
     session_id = str(result.inserted_id)
     session.id = session_id
 
-    questions: list[Question] = plan_questions(session_id, body.mode, body.difficulty, body.duration_minutes)
+    from services.question_planner import plan_resume_questions
+    if body.mode == "resume":
+        if not body.resume_text:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Resume text is required for resume mode")
+        questions = await plan_resume_questions(session_id, body.resume_text, body.duration_minutes)
+    else:
+        questions = plan_questions(session_id, body.mode, body.difficulty, body.duration_minutes)
+        
     question_ids: list[str] = []
     if questions:
         q_docs = [q.to_mongo() for q in questions]
@@ -70,7 +81,14 @@ async def create_session(
     # Create the ElevenLabs conversational agent for this session
     agent_id: str | None = None
     try:
-        agent_id = await create_interview_agent(session, questions)
+        agent_id, first_msg, voice_cfg = await create_interview_agent(session, questions)
+        background_tasks.add_task(
+            tts_prewarm,
+            first_msg,
+            voice_cfg["voice_id"],
+            voice_cfg["stability"],
+            voice_cfg["similarity_boost"],
+        )
     except Exception as exc:
         logger.error("ElevenLabs agent creation failed for session %s: %s", session_id, exc)
 

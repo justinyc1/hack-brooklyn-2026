@@ -11,11 +11,14 @@ from models.interview_session import (
 
 class CreateSessionRequest(BaseModel):
     mode: InterviewMode
-    role: str
+    role: str | None = None
     company: str | None = None
     difficulty: Difficulty = Difficulty.medium
     duration_minutes: int = Field(default=30, ge=5, le=120)
     interviewer_tone: InterviewerTone = InterviewerTone.neutral
+    behavioral_persona: BehavioralPersona | None = None
+    resume_text: str | None = None
+    resume_s3_url: str | None = None
 
 
 class CreateBehavioralSessionRequest(BaseModel):
@@ -28,6 +31,7 @@ class PatchSessionRequest(BaseModel):
     started_at: datetime | None = None
     ended_at: datetime | None = None
     elevenlabs_conversation_id: str | None = None
+    audio_s3_url: str | None = None
 
 
 class SessionResponse(BaseModel):
@@ -40,6 +44,9 @@ class SessionResponse(BaseModel):
     duration_minutes: int
     interviewer_tone: InterviewerTone | None = None
     behavioral_persona: BehavioralPersona | None = None
+    resume_text: str | None = None
+    resume_s3_url: str | None = None
+    audio_s3_url: str | None = None
     status: SessionStatus
     question_ids: list[str]
     elevenlabs_agent_id: str | None = None
@@ -76,3 +83,16 @@ class QuestionResponse(BaseModel):
     order: int
     coding_problem_id: str | None = None
     problem: ProblemResponse | None = None
+
+
+class CodeSnapshotRequest(BaseModel):
+    language: str
+    code: str
+    sequence: int
+
+
+class CodeSnapshotDetail(BaseModel):
+    sequence: int
+    language: str
+    timestamp: str
+    code: str

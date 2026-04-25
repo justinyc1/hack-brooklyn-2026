@@ -2,7 +2,7 @@
 
 
 Flow per interview session:
-  1. create_interview_agent()  — one agent per session, returns agent_id
+  1. create_interview_agent()  — one agent per session, returns (agent_id, first_message, voice_cfg)
   2. get_signed_url()          — returns a short-lived wss:// URL the frontend uses
   3. sync_transcript()         — called on session completion; pulls ElevenLabs
                                  conversation transcript and persists to MongoDB
@@ -189,8 +189,8 @@ Conduct guidelines:
 
 
 
-async def create_interview_agent(session, questions: list) -> str:
-    """Create a per-session ElevenLabs conversational agent. Returns agent_id."""
+async def create_interview_agent(session, questions: list) -> tuple[str, str, dict]:
+    """Create a per-session ElevenLabs conversational agent. Returns (agent_id, first_message, voice_cfg)."""
     tone_key = session.interviewer_tone.value if session.interviewer_tone else "neutral"
     voice_cfg = _TONE_VOICE.get(tone_key, _TONE_VOICE["neutral"])
 
@@ -259,11 +259,11 @@ async def create_interview_agent(session, questions: list) -> str:
         )
         if not resp.is_success:
             raise RuntimeError(f"ElevenLabs agent creation failed {resp.status_code}: {resp.text}")
-        return resp.json()["agent_id"]
+        return resp.json()["agent_id"], first_message, voice_cfg
 
 
-async def create_behavioral_agent(session, questions: list) -> str:
-    """Create a per-session ElevenLabs agent for behavioral interviews. Returns agent_id."""
+async def create_behavioral_agent(session, questions: list) -> tuple[str, str, dict]:
+    """Create a per-session ElevenLabs agent for behavioral interviews. Returns (agent_id, first_message, voice_cfg)."""
     persona_key = session.behavioral_persona.value if session.behavioral_persona else "supportive"
     voice_cfg = _BEHAVIORAL_VOICE.get(persona_key, _BEHAVIORAL_VOICE["supportive"])
 
@@ -309,7 +309,7 @@ async def create_behavioral_agent(session, questions: list) -> str:
         )
         if not resp.is_success:
             raise RuntimeError(f"ElevenLabs behavioral agent creation failed {resp.status_code}: {resp.text}")
-        return resp.json()["agent_id"]
+        return resp.json()["agent_id"], first_message, voice_cfg
 
 
 async def get_signed_url(agent_id: str) -> str:

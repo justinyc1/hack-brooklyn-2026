@@ -137,3 +137,54 @@ async def _handle(session_id: str, clerk_user_id: str, msg: dict, ws: WebSocket)
 
     else:
         await ws.send_json({"type": "error", "detail": f"Unknown message type: {msg_type}"})
+
+
+@router.websocket("/ws/interviews/{session_id}/audio")
+async def audio_stream_ws(
+    websocket: WebSocket,
+    session_id: str,
+    token: str = Query(..., description="Clerk session JWT"),
+):
+    # --- Auth ---
+    try:
+        claims = verify_token(token)
+        clerk_user_id: str = claims["sub"]
+    except Exception:
+        await websocket.close(code=4001, reason="Unauthorized")
+        return
+
+    # --- Session ownership check ---
+    if not ObjectId.is_valid(session_id):
+        await websocket.close(code=4004, reason="Invalid session id")
+        return
+
+    doc = db.sessions.find_one({"_id": ObjectId(session_id), "clerk_user_id": clerk_user_id})
+    if not doc:
+        await websocket.close(code=4004, reason="Session not found")
+        return
+
+    from services.s3 import S3MultipartAudioStreamer
+    streamer = None
+    try:
+        streamer = S3MultipartAudioStreamer(session_id)
+        await websocket.accept()
+        logger.info("Audio WS connected: session=%s user=%s", session_id, clerk_user_id)
+        
+        while True:
+            chunk = await websocket.receive_bytes()
+            if chunk:
+                streamer.add_chunk(chunk)
+                
+    except WebSocketDisconnect:
+        logger.info("Audio WS disconnected: session=%s user=%s", session_id, clerk_user_id)
+    except Exception as e:
+        logger.error("Audio WS error for session %s: %s", session_id, e)
+    finally:
+        if streamer:
+            audio_url = streamer.close()
+            if audio_url:
+                db.sessions.update_one(
+                    {"_id": ObjectId(session_id)},
+                    {"$set": {"audio_s3_url": audio_url}}
+                )
+                logger.info("Saved audio_s3_url for session %s: %s", session_id, audio_url)

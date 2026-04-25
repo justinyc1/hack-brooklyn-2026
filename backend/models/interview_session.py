@@ -8,6 +8,7 @@ class InterviewMode(str, Enum):
     technical = "technical"
     behavioral = "behavioral"
     mixed = "mixed"
+    resume = "resume"
 
 
 class Difficulty(str, Enum):
@@ -48,6 +49,10 @@ class InterviewSession(MongoBase):
     behavioral_persona: BehavioralPersona | None = None
     status: SessionStatus = SessionStatus.pending
     company_snapshot_id: str | None = None
+    resume_text: str | None = None
+    resume_s3_url: str | None = None
+    audio_s3_url: str | None = None
+    code_snapshots: list[dict] = Field(default_factory=list)
     question_ids: list[str] = Field(default_factory=list)
     elevenlabs_agent_id: str | None = None
     elevenlabs_conversation_id: str | None = None

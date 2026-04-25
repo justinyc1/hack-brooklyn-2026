@@ -3,9 +3,10 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '@clerk/clerk-react'
 import { motion } from 'framer-motion'
 import { toast } from 'sonner'
+import Editor from '@monaco-editor/react'
 import { cn } from '@/lib/cn'
 import { apiFetch } from '@/lib/api'
-import type { ApiFeedbackReport } from '@/lib/apiTypes'
+import type { ApiFeedbackReport, ApiSession, ApiCodeSnapshot } from '@/lib/apiTypes'
 
 const stagger = { hidden: {}, show: { transition: { staggerChildren: 0.08 } } }
 const fadeUp = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" as const } } }
@@ -127,13 +128,80 @@ function QuestionAccordion({ qf, idx }: { qf: QuestionFeedbackUI; idx: number })
   )
 }
 
+function CodeTimeline({ snapshots, idx, onIdxChange }: {
+  snapshots: ApiCodeSnapshot[]
+  idx: number
+  onIdxChange: (i: number) => void
+}) {
+  const snap = snapshots[idx]
+  if (!snap) return null
+
+  const ts = new Date(snap.timestamp)
+  const timeLabel = ts.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+
+  return (
+    <div className="rounded-md border border-ink-700/60 bg-ink-900 overflow-hidden">
+      <div className="flex items-center justify-between border-b border-ink-700/60 px-5 py-3">
+        <div>
+          <p className="font-mono text-[10px] uppercase tracking-widest text-paper-faint">Code Timeline</p>
+          <p className="mt-0.5 font-mono text-xs text-paper-dim">
+            Snapshot {idx + 1} of {snapshots.length} · {snap.language} · {timeLabel}
+          </p>
+        </div>
+        <span className="font-mono text-[10px] text-paper-faint/60">{snapshots.length} snapshots</span>
+      </div>
+
+      <div className="px-5 py-3 border-b border-ink-700/60">
+        <input
+          type="range"
+          min={0}
+          max={snapshots.length - 1}
+          value={idx}
+          onChange={(e) => onIdxChange(Number(e.target.value))}
+          className="w-full accent-ember cursor-pointer"
+        />
+        <div className="mt-1 flex justify-between font-mono text-[9px] text-paper-faint/50">
+          <span>Start</span>
+          <span>End</span>
+        </div>
+      </div>
+
+      <div style={{ height: 320 }}>
+        <Editor
+          height="100%"
+          language={snap.language === 'cpp' ? 'cpp' : snap.language}
+          value={snap.code}
+          theme="vs-dark"
+          options={{
+            readOnly: true,
+            fontSize: 12,
+            fontFamily: '"JetBrains Mono", monospace',
+            lineHeight: 1.6,
+            padding: { top: 12, bottom: 12 },
+            minimap: { enabled: false },
+            scrollBeyondLastLine: false,
+            renderLineHighlight: 'none',
+            cursorWidth: 0,
+          }}
+        />
+      </div>
+    </div>
+  )
+}
+
 export function Feedback() {
   const { id: sessionId } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { getToken } = useAuth()
   const [report, setReport] = useState<ApiFeedbackReport | null>(null)
+  const [session, setSession] = useState<ApiSession | null>(null)
   const [loading, setLoading] = useState(true)
   const [pollCount, setPollCount] = useState(0)
+  const [snapshots, setSnapshots] = useState<ApiCodeSnapshot[]>([])
+  const [snapshotIdx, setSnapshotIdx] = useState(0)
+  const [loadingSnapshots, setLoadingSnapshots] = useState(false)
+  const [shareUrl, setShareUrl] = useState<string | null>(null)
+  const [sharing, setSharing] = useState(false)
 
   useEffect(() => {
     if (!sessionId) return
@@ -143,8 +211,31 @@ export function Feedback() {
       try {
         const token = await getToken()
         if (!token || cancelled) return
-        const data = await apiFetch<ApiFeedbackReport>(`/api/feedback/${sessionId}`, token)
-        if (!cancelled) { setReport(data); setLoading(false) }
+        const [feedbackData, sessionData] = await Promise.all([
+          apiFetch<ApiFeedbackReport>(`/api/feedback/${sessionId}`, token),
+          apiFetch<ApiSession>(`/api/interviews/${sessionId}`, token).catch(() => null)
+        ])
+        if (!cancelled) {
+          setReport(feedbackData)
+          setSession(sessionData)
+          setLoading(false)
+
+          if (sessionData?.mode === 'technical') {
+            setLoadingSnapshots(true)
+            try {
+              const snaps = await apiFetch<ApiCodeSnapshot[]>(
+                `/api/interviews/${sessionId}/code/snapshots`,
+                token
+              )
+              setSnapshots(snaps ?? [])
+              setSnapshotIdx(Math.max(0, (snaps?.length ?? 1) - 1))
+            } catch {
+              // snapshots optional
+            } finally {
+              setLoadingSnapshots(false)
+            }
+          }
+        }
       } catch {
         // 404 means not ready yet — retry is scheduled by the timeout effect
       }
@@ -163,6 +254,34 @@ export function Feedback() {
     const id = setTimeout(() => setPollCount((n) => n + 1), 3000)
     return () => clearTimeout(id)
   }, [pollCount, loading])
+
+  async function handleShare() {
+    if (!sessionId || shareUrl) return
+    const token = await getToken()
+    if (!token) {
+      toast.error('Authentication error. Please try again.')
+      return
+    }
+    setSharing(true)
+    try {
+      const data = await apiFetch<{ url: string; expires_in: number }>(
+        `/api/feedback/${sessionId}/share`,
+        token,
+        { method: 'POST' }
+      )
+      setShareUrl(data.url)
+      try {
+        await navigator.clipboard.writeText(data.url)
+        toast.success('Share link copied to clipboard! Valid for 7 days.')
+      } catch {
+        toast.info(`Share link ready — copy manually: ${data.url}`)
+      }
+    } catch {
+      toast.error('Failed to generate share link.')
+    } finally {
+      setSharing(false)
+    }
+  }
 
   if (loading) {
     return (
@@ -264,12 +383,37 @@ export function Feedback() {
           </motion.div>
         )}
 
+        {snapshots.length > 0 && (
+          <motion.div variants={fadeUp} className="mb-8">
+            <p className="mb-4 font-mono text-xs uppercase tracking-widest text-paper-faint">Code Evolution</p>
+            {loadingSnapshots ? (
+              <p className="font-mono text-xs text-paper-faint/60 animate-pulse">Loading snapshots...</p>
+            ) : (
+              <CodeTimeline snapshots={snapshots} idx={snapshotIdx} onIdxChange={setSnapshotIdx} />
+            )}
+          </motion.div>
+        )}
+
         <motion.div variants={fadeUp} className="flex flex-wrap items-center gap-4">
+          {session?.audio_s3_url ? (
+            <div className="flex flex-col gap-1">
+              <span className="font-mono text-[10px] uppercase tracking-widest text-paper-faint">Session Audio</span>
+              <audio controls src={session.audio_s3_url} className="h-10 rounded-sm" />
+            </div>
+          ) : (
+            <button
+              onClick={() => toast.info('Audio replay not available for this session')}
+              className="flex items-center gap-2 rounded-sm border border-ink-700/60 px-4 py-2 font-mono text-xs text-paper-faint hover:border-paper-faint/30 hover:text-paper-dim transition-all duration-200"
+            >
+              ▶ Replay session audio
+            </button>
+          )}
           <button
-            onClick={() => toast.info('Audio replay coming soon')}
-            className="flex items-center gap-2 rounded-sm border border-ink-700/60 px-4 py-2 font-mono text-xs text-paper-faint hover:border-paper-faint/30 hover:text-paper-dim transition-all duration-200"
+            onClick={handleShare}
+            disabled={sharing || !!shareUrl}
+            className="flex items-center gap-2 rounded-sm border border-ink-700/60 px-4 py-2 font-mono text-xs text-paper-faint hover:border-paper-faint/30 hover:text-paper-dim transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            ▶ Replay session audio
+            {sharing ? 'Generating...' : shareUrl ? '✓ Link copied' : '↗ Share Report'}
           </button>
           <button onClick={() => navigate('/setup')} className="flex items-center gap-2 rounded-sm bg-ember px-5 py-2 font-mono text-xs text-ink-950 hover:bg-ember-soft transition-all duration-200">
             Practice again →

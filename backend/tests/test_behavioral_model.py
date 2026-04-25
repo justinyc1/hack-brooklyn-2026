@@ -72,7 +72,7 @@ def test_create_behavioral_session_endpoint(monkeypatch):
     with (
         patch("routes.behavioral.db", mock_db),
         patch("routes.behavioral.plan_behavioral_questions", new=AsyncMock(return_value=[])),
-        patch("routes.behavioral.create_behavioral_agent", new=AsyncMock(return_value="agent_abc")),
+        patch("routes.behavioral.create_behavioral_agent", new=AsyncMock(return_value=("agent_abc", "Hello! Thank you for joining today.", {"voice_id": "EXAVITQu4vr4xnSDxMaL", "stability": 0.65, "similarity_boost": 0.80}))),
     ):
         app.dependency_overrides[require_auth] = override_auth
         client = TestClient(app)

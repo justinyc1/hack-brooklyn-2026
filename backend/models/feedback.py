@@ -43,3 +43,4 @@ class FeedbackReport(MongoBase):
     top_weaknesses: list[str] = Field(default_factory=list)
     targeted_drills: list[str] = Field(default_factory=list)
     generated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    report_s3_key: str | None = None

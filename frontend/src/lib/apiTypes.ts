@@ -1,7 +1,7 @@
 // Matches FastAPI response schemas exactly (snake_case)
 
 export type SessionStatus = 'pending' | 'active' | 'completed' | 'abandoned'
-export type SessionMode = 'technical' | 'behavioral' | 'mixed'
+export type SessionMode = 'technical' | 'behavioral' | 'mixed' | 'resume'
 export type BehavioralPersona = 'supportive' | 'corporate' | 'pressure' | 'probing'
 
 export interface ApiSession {
@@ -18,6 +18,7 @@ export interface ApiSession {
   question_ids: string[]
   elevenlabs_agent_id: string | null
   elevenlabs_conversation_id: string | null
+  audio_s3_url: string | null
   created_at: string
   started_at: string | null
   ended_at: string | null
@@ -31,6 +32,13 @@ export interface ApiSessionList {
 export interface ApiAgentUrl {
   agent_id: string
   signed_url: string
+}
+
+export interface ApiCodeSnapshot {
+  sequence: number
+  language: string
+  timestamp: string
+  code: string
 }
 
 export interface ApiProblem {
@@ -108,4 +116,9 @@ export interface ApiFeedbackReport {
   top_weaknesses: string[]
   targeted_drills: string[]
   generated_at: string
+}
+
+export interface ApiReportShare {
+  url: string
+  expires_in: number
 }

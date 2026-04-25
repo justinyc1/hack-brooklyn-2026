@@ -1,7 +1,7 @@
 import logging
 
 from bson import ObjectId
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 
 from auth.clerk import require_auth
 from db import db
@@ -9,6 +9,7 @@ from models.interview_session import InterviewMode, InterviewSession
 from routes._helpers import session_to_response
 from schemas.interviews import CreateBehavioralSessionRequest, SessionResponse
 from services.elevenlabs import create_behavioral_agent
+from services.tts_cache import prewarm as tts_prewarm
 from services.question_planner import plan_behavioral_questions
 
 logger = logging.getLogger(__name__)
@@ -16,10 +17,13 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/interviews/behavioral", tags=["behavioral"])
 
 
+from auth.rate_limit import RateLimiter
+
 @router.post("", response_model=SessionResponse, status_code=status.HTTP_201_CREATED)
 async def create_behavioral_session(
     body: CreateBehavioralSessionRequest,
-    clerk_user_id: str = Depends(require_auth),
+    background_tasks: BackgroundTasks,
+    clerk_user_id: str = Depends(RateLimiter(5, 60, "create_behavioral_session")),
 ):
     session = InterviewSession(
         clerk_user_id=clerk_user_id,
@@ -50,7 +54,14 @@ async def create_behavioral_session(
 
     agent_id: str | None = None
     try:
-        agent_id = await create_behavioral_agent(session, questions)
+        agent_id, first_msg, voice_cfg = await create_behavioral_agent(session, questions)
+        background_tasks.add_task(
+            tts_prewarm,
+            first_msg,
+            voice_cfg["voice_id"],
+            voice_cfg["stability"],
+            voice_cfg["similarity_boost"],
+        )
     except Exception as exc:
         logger.error("ElevenLabs agent creation failed for behavioral session %s: %s", session_id, exc)
 

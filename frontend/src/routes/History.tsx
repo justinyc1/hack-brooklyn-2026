@@ -123,6 +123,7 @@ export function History() {
                     {new Date(session.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                     {' · '}
                     {session.status === 'completed' ? 'Completed' : session.status === 'active' ? 'In progress' : session.status}
+                    {session.audio_s3_url && <span className="ml-2 text-moss" title="Audio recording available">🎤 Audio</span>}
                   </p>
                 </div>
                 <p className="font-mono text-xs text-paper-dim">{session.company ?? '—'}</p>

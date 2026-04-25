@@ -7,7 +7,7 @@ import type { Status } from "@11labs/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { cn } from "@/lib/cn";
-import { apiFetch } from "@/lib/api";
+import { apiFetch, wsUrl } from "@/lib/api";
 import type {
   ApiSession,
   ApiQuestion,
@@ -500,10 +500,14 @@ export function TechnicalInterview() {
   const convRef = useRef<Awaited<
     ReturnType<typeof Conversation.startSession>
   > | null>(null);
+  const audioWsRef = useRef<WebSocket | null>(null)
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const transcriptRef = useRef<HTMLDivElement>(null);
   const codeRef = useRef(code);
   const languageRef = useRef(language);
   const testResultsRef = useRef(testResults);
+  const lastSnapshotCodeRef = useRef<string>('')
+  const snapshotSeqRef = useRef(0)
 
 
   useEffect(() => {
@@ -515,6 +519,30 @@ export function TechnicalInterview() {
   useEffect(() => {
     testResultsRef.current = testResults;
   }, [testResults]);
+
+  useEffect(() => {
+    if (!sessionId || !started) return
+
+    const sendSnapshot = async () => {
+      const currentCode = codeRef.current
+      if (!currentCode.trim() || currentCode === lastSnapshotCodeRef.current) return
+      lastSnapshotCodeRef.current = currentCode
+      const seq = ++snapshotSeqRef.current
+      try {
+        const token = await getToken()
+        if (!token) return
+        await apiFetch(`/api/interviews/${sessionId}/code/snapshot`, token, {
+          method: 'POST',
+          body: JSON.stringify({ language: languageRef.current, code: currentCode, sequence: seq }),
+        })
+      } catch (err) {
+        console.error('Snapshot failed (non-critical):', err)
+      }
+    }
+
+    const intervalId = setInterval(sendSnapshot, 30_000)
+    return () => clearInterval(intervalId)
+  }, [sessionId, started, getToken])
 
 
   const totalSecs = (session?.duration_minutes ?? 45) * 60;
@@ -573,6 +601,8 @@ export function TechnicalInterview() {
     load();
     return () => {
       cancelled = true;
+      mediaRecorderRef.current?.stop()
+      audioWsRef.current?.close()
       convRef.current?.endSession().catch(() => {});
     };
   }, [sessionId, getToken]);
@@ -637,6 +667,47 @@ export function TechnicalInterview() {
             method: "PATCH",
             body: JSON.stringify({ elevenlabs_conversation_id: convId }),
           });
+        }
+      }
+
+      // Tap ElevenLabs AudioContext to record both user + AI audio
+      type VoiceConversationWithAudio = typeof conversation & {
+        output?: { context: AudioContext; gain: AudioNode }
+        input?: { inputStream: MediaStream }
+      }
+      const voiceConv = conversation as VoiceConversationWithAudio
+      if (voiceConv.output && voiceConv.input) {
+        try {
+          const token2 = await getToken()
+          if (token2 && sessionId) {
+            const wsProtocolUrl = wsUrl(`/ws/interviews/${sessionId}/audio?token=${token2}`)
+            const audioWs = new WebSocket(wsProtocolUrl)
+            audioWsRef.current = audioWs
+
+            const ctx: AudioContext = voiceConv.output.context
+            const recordingDest = ctx.createMediaStreamDestination()
+            voiceConv.output.gain.connect(recordingDest)
+            const micSrc = ctx.createMediaStreamSource(voiceConv.input.inputStream)
+            micSrc.connect(recordingDest)
+
+            const doRecord = () => {
+              const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+                ? 'audio/webm;codecs=opus'
+                : 'audio/webm'
+              const mr = new MediaRecorder(recordingDest.stream, { mimeType })
+              mediaRecorderRef.current = mr
+              mr.ondataavailable = (e) => {
+                if (e.data.size > 0 && audioWs.readyState === WebSocket.OPEN) {
+                  audioWs.send(e.data)
+                }
+              }
+              mr.start(1000)
+            }
+            if (audioWs.readyState === WebSocket.OPEN) doRecord()
+            else audioWs.onopen = doRecord
+          }
+        } catch (err) {
+          console.error('Failed to set up audio recording:', err)
         }
       }
     } catch (err) {
@@ -722,6 +793,8 @@ export function TechnicalInterview() {
   const endSession = async (tokenArg?: string) => {
     if (!sessionId) return;
     try {
+      mediaRecorderRef.current?.stop()
+      audioWsRef.current?.close()
       await convRef.current?.endSession();
       const token = tokenArg ?? (await getToken());
       if (!token) return;
