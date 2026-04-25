@@ -17,9 +17,9 @@ export default {
           faint: '#3F3F46',
         },
         ember: {
-          DEFAULT: '#4ADE80',
-          soft: '#86EFAC',
-          muted: 'rgba(74,222,128,0.1)',
+          DEFAULT: '#F97316',
+          soft: '#FDBA74',
+          muted: 'rgba(249,115,22,0.1)',
         },
         moss: {
           DEFAULT: '#4ADE80',
