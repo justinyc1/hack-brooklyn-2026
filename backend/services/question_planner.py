@@ -142,7 +142,7 @@ def plan_questions(
             session_id=session_id,
             order=i,
             type=QuestionType.technical,
-            prompt=problem["prompt"],
+            prompt=problem.get("prompt", problem.get("description", "")),
             follow_up_tree=[],
             coding_problem_id=problem["id"],
         ))
