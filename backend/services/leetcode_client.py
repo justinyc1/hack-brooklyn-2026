@@ -25,7 +25,7 @@ async def fetch_problem_list(limit: int = 200) -> list[dict]:
         return _list_cache
 
     try:
-        async with httpx.AsyncClient(timeout=15) as client:
+        async with httpx.AsyncClient(timeout=60) as client:
             resp = await client.get(f"{_BASE}/problems", params={"limit": limit})
             resp.raise_for_status()
             data = resp.json()
@@ -49,7 +49,7 @@ async def fetch_problem_detail(slug: str) -> dict | None:
         return _detail_cache[slug]
 
     try:
-        async with httpx.AsyncClient(timeout=15) as client:
+        async with httpx.AsyncClient(timeout=60) as client:
             resp = await client.get(f"{_BASE}/select", params={"titleSlug": slug})
             resp.raise_for_status()
             data = resp.json()

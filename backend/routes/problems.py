@@ -21,12 +21,12 @@ def _normalize_difficulty(raw: str) -> str:
     return raw.lower()
 
 
-def _local_to_list_item(p: dict) -> ProblemListItem:
+def _db_to_list_item(p: dict) -> ProblemListItem:
     return ProblemListItem(
         slug=p["id"],
         title=p["title"],
         difficulty=_normalize_difficulty(p["difficulty"]),
-        source="local",
+        source=p.get("source", "local"),
         has_test_cases=bool(p.get("test_cases")),
         topic_tags=p.get("topic_tags", []),
     )
@@ -56,7 +56,7 @@ def _local_to_detail(p: dict) -> ProblemDetail:
         slug=p["id"],
         title=p["title"],
         difficulty=_normalize_difficulty(p["difficulty"]),
-        source="local",
+        source=p.get("source", "local"),
         has_test_cases=bool(p.get("test_cases")),
         description=p.get("description", ""),
         examples=examples,
@@ -83,22 +83,34 @@ def _lc_to_detail(d: dict) -> ProblemDetail:
     )
 
 
+_CATALOG_THRESHOLD = 20 
+
+
 @router.get("", response_model=ProblemListResponse)
 async def list_problems(
     limit: int = Query(50, ge=1, le=200),
     skip: int = Query(0, ge=0),
     difficulty: str = "all",
 ):
-    """Return paginated problem list: local DB problems + alfa-leetcode-api problems."""
-    local_all = list(db.problems.find({}, {"_id": 0}))
-    local_ids = {p["id"] for p in local_all}
+    """Return paginated problem list served from MongoDB.
 
+    Falls back to alfa-leetcode-api only when the catalog hasn't been seeded yet
+    (fewer than _CATALOG_THRESHOLD problems in the DB).
+    """
     diff_filter = difficulty.lower() if difficulty != "all" else None
+    query = {}
     if diff_filter:
-        local_filtered = [p for p in local_all if p["difficulty"].lower() == diff_filter]
-    else:
-        local_filtered = local_all
+        query["difficulty"] = diff_filter
 
+    db_all = list(db.problems.find(query, {"_id": 0}))
+
+    if len(db_all) >= _CATALOG_THRESHOLD:
+        combined = [_db_to_list_item(p) for p in db_all]
+        total = len(combined)
+        return ProblemListResponse(problems=combined[skip: skip + limit], total=total)
+
+    # Cold-start fallback: catalog not seeded yet, merge DB + API
+    local_ids = {p["id"] for p in db_all}
     lc_raw = await fetch_problem_list(limit=200)
     lc_filtered = [
         p for p in lc_raw
@@ -108,7 +120,7 @@ async def list_problems(
     ]
 
     combined = (
-        [_local_to_list_item(p) for p in local_filtered]
+        [_db_to_list_item(p) for p in db_all]
         + [_lc_to_list_item(p) for p in lc_filtered]
     )
     total = len(combined)
