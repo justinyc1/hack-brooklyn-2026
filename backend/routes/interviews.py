@@ -71,17 +71,19 @@ async def create_session(
         questions = await plan_resume_questions(session_id, body.resume_text, body.duration_minutes)
     elif body.problem_id:
         raw = load_problem(body.problem_id)
-        if raw and raw.get("test_cases"):
-            questions = [Question(
-                session_id=session_id,
-                order=0,
-                type=QuestionType.technical,
-                prompt=raw.get("prompt", raw.get("description", "")),
-                follow_up_tree=[],
-                coding_problem_id=raw["id"],
-            )]
-        else:
-            questions = plan_questions(session_id, body.mode, body.difficulty, body.duration_minutes)
+        if not raw or not raw.get("test_cases"):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Problem '{body.problem_id}' has no test cases. Call POST /api/problems/{{slug}}/generate-tests first.",
+            )
+        questions = [Question(
+            session_id=session_id,
+            order=0,
+            type=QuestionType.technical,
+            prompt=raw.get("prompt", raw.get("description", "")),
+            follow_up_tree=[],
+            coding_problem_id=raw["id"],
+        )]
     else:
         questions = plan_questions(session_id, body.mode, body.difficulty, body.duration_minutes)
         
