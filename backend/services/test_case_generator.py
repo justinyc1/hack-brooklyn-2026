@@ -214,6 +214,14 @@ async def generate_full_problem(problem: dict) -> dict:
         constraints_block=_escape_braces(constraints_block),
     )
 
+    _LANG_DEFAULTS = {
+        "python": "import sys\n\ndef solve():\n    # Write your solution here\n    pass\n\nif __name__ == \"__main__\":\n    data = sys.stdin.read().strip()\n    solve()\n",
+        "javascript": "const lines = require('fs').readFileSync('/dev/stdin','utf8').trim().split('\\n');\n\nfunction solve() {\n    // Write your solution here\n}\n\nconsole.log(solve());\n",
+        "java": "import java.util.*;\nimport java.io.*;\n\npublic class Main {\n    public static void main(String[] args) throws Exception {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        // Write your solution here\n    }\n}\n",
+        "cpp": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    // Write your solution here\n    return 0;\n}\n",
+        "go": "package main\n\nimport (\n    \"bufio\"\n    \"fmt\"\n    \"os\"\n)\n\nfunc main() {\n    reader := bufio.NewReader(os.Stdin)\n    _ = reader\n    _ = fmt.Println\n    // Write your solution here\n}\n",
+    }
+
     for attempt in range(2):
         try:
             raw = await chat_complete(prompt, temperature=0.2, max_tokens=3000)
@@ -225,18 +233,25 @@ async def generate_full_problem(problem: dict) -> dict:
                 logger.warning("generate_full_problem: missing keys on attempt %d", attempt + 1)
                 continue
 
-            if len(data["test_cases"]) != 5:
-                logger.warning("generate_full_problem: expected 5 test cases, got %d", len(data["test_cases"]))
+            test_cases = data["test_cases"]
+            if len(test_cases) < 3:
+                logger.warning("generate_full_problem: only %d test cases on attempt %d", len(test_cases), attempt + 1)
                 continue
 
-            required_langs = {"python", "javascript", "java", "cpp", "go"}
-            if not required_langs.issubset(data["starter_code"].keys()):
-                logger.warning("generate_full_problem: missing languages in starter_code")
-                continue
+            # Fill in any languages the LLM omitted with safe defaults
+            starter_code = data["starter_code"]
+            for lang, default_code in _LANG_DEFAULTS.items():
+                if lang not in starter_code:
+                    logger.warning("generate_full_problem: missing language %s, using default", lang)
+                    starter_code[lang] = default_code
+
+            # Enforce hidden flags: first 3 visible, rest hidden
+            for i, tc in enumerate(test_cases):
+                tc["is_hidden"] = i >= 3
 
             return {
-                "test_cases": data["test_cases"],
-                "starter_code": data["starter_code"],
+                "test_cases": test_cases,
+                "starter_code": starter_code,
                 "examples": examples,
                 "constraints": constraints,
             }
