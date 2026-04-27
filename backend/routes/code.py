@@ -53,6 +53,8 @@ def _validate_request(session_id: str, body: CodeRunRequest, clerk_user_id: str)
     problem = load_problem(problem_id)
     if not problem:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Problem '{problem_id}' not found")
+    if not problem.get("test_cases"):
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"Problem '{problem_id}' has no test cases")
 
     return question, problem
 

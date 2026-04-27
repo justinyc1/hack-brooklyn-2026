@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@clerk/clerk-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { toast } from 'sonner'
 import { cn } from '@/lib/cn'
 import { apiFetch } from '@/lib/api'
 import type { ApiProblemListItem, ApiProblemListResponse, ApiProblemDetail, ApiSolvedSlugsResponse, ApiMarkSolvedResponse } from '@/lib/apiTypes'
@@ -125,6 +126,7 @@ function DetailPanel({ slug, onClose, onPractice, isSolved, onSolve, onTestsGene
       setDetail(updated)
       onTestsGenerated()
     } catch {
+      toast.error('Failed to generate test cases. Try again.')
       setGeneratingTests(false)
     }
   }

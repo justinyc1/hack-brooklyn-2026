@@ -283,7 +283,12 @@ export function Setup() {
 
       navigate(`/interview/${session.id}/${session.mode === 'behavioral' || session.mode === 'resume' ? 'behavioral' : 'technical'}`)
     } catch (err) {
-      toast.error('Failed to create session. Is the backend running?')
+      const msg = err instanceof Error ? err.message : ''
+      if (msg.includes('generate-tests') || msg.includes('no test cases')) {
+        toast.error('Problem not ready — test cases still generating. Try again in a moment.')
+      } else {
+        toast.error('Failed to create session')
+      }
       console.error(err)
     } finally {
       setLoading(false)
