@@ -1,7 +1,7 @@
 from openai import AsyncOpenAI
 from config import settings
 
-_GROQ_MODEL = "llama-3.1-8b-instant"
+_GROQ_MODEL = "openai/gpt-oss-20b"
 _FEATHERLESS_MODEL = "meta-llama/Meta-Llama-3.1-8B-Instruct"
 
 _client: AsyncOpenAI | None = None
